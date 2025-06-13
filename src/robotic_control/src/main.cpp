@@ -192,8 +192,19 @@ int main()
 
           auto solutions = robot.inverseKinematics(pose);
           bool flag{false};
-          for(auto &solution_:solutions)
-          // {
+
+          std::cout<<"------Target Matrix------"<<std::endl;
+          for(int f = 0;f < 4;f++)
+          {
+            std::cout<<"第"<<f+1<<"行"<<std::endl;
+            for(int j = 0;j < 4;j++)
+            {
+              std::cout<<pose(f,j)<<" ";
+            }
+            std::cout<<std::endl;
+          }
+          for(auto &solution_:solutions){
+          
             if(robot.isRightSolution(solution_,pose))
             {
               solution = solution_;
@@ -201,7 +212,8 @@ int main()
               flag = true;
               break;
             }
-        
+            }
+            
             if(flag)
             {
               std::cout<<"规划成功 "<<std::endl;
@@ -210,11 +222,13 @@ int main()
               std::cout<<"规划失败 "<<std::endl;
               failed_count++;
             }
+            std::cout<<" "<<std::endl;
+            std::cout<<" "<<std::endl;
             Eigen::Vector2f new_pos = generateCircle(data->time-t_init,radius,x,z,1.0);
             pose(0,3) = new_pos(0);
             pose(2,3) = new_pos(1);
           }
-          
+
         // get framebuffer viewport
         mjrRect viewport = {0, 0, 0, 0};
         glfwGetFramebufferSize(window, &viewport.width, &viewport.height);
@@ -227,7 +241,7 @@ int main()
         glfwSwapBuffers(window);
         glfwPollEvents();
           }
-        if(data->time > 41){
+        if(data->time > 3){
           break;
           std::this_thread::sleep_for(std::chrono::milliseconds(2000));
         }

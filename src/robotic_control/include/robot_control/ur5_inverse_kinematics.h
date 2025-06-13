@@ -19,7 +19,7 @@ std::vector<Solutions<6>> inverseKinematics(const Pose end_pose)override;
 bool isRightSolution(const Solutions<6> solution,const Pose end_pose);
 
 
-bool isWristSolution(Eigen::Vector3f thetas,Eigen::Matrix4f pose);
+void mutipleSolution(float theta234,float x,float z,float theta5);
 
 std::vector<std::array<float,4>> dh_table_;
 std::vector<std::array<float,2>> angle_limit_;

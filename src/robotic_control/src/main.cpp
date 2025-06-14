@@ -193,16 +193,6 @@ int main()
           auto solutions = robot.inverseKinematics(pose);
           bool flag{false};
 
-          std::cout<<"------Target Matrix------"<<std::endl;
-          for(int f = 0;f < 4;f++)
-          {
-            std::cout<<"第"<<f+1<<"行"<<std::endl;
-            for(int j = 0;j < 4;j++)
-            {
-              std::cout<<pose(f,j)<<" ";
-            }
-            std::cout<<std::endl;
-          }
           for(auto &solution_:solutions){
           
             if(robot.isRightSolution(solution_,pose))
@@ -241,7 +231,7 @@ int main()
         glfwSwapBuffers(window);
         glfwPollEvents();
           }
-        if(data->time > 3){
+        if(data->time > 15){
           break;
           std::this_thread::sleep_for(std::chrono::milliseconds(2000));
         }

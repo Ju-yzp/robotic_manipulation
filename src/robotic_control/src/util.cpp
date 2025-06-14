@@ -68,7 +68,7 @@ bool checkSolutions(Eigen::Matrix4f pose,Eigen::Matrix4f reach_pose,float pos_er
                       std::pow(real_quaternion.y()-target_quaternion.y(),2)+
                       std::pow(real_quaternion.z()-target_quaternion.z(),2)+
                       std::pow(real_quaternion.w()-target_quaternion.w(),2);
-    std::cout<<"position error: "<<pos_error<<std::endl;
+    // std::cout<<"position error: "<<pos_error<<std::endl;
     if(pos_error < pos_error_upper )//&& rot_error < rot_error_upper)
         status = true;
     

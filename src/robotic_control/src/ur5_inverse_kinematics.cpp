@@ -15,7 +15,7 @@ void convertAngle(float &angle)
   {
     angle = M_PIf * 2.0F - angle;
   }
-  else if(angle <= -M_PIf)
+  else if(angle < -M_PIf)
   {
     angle += M_PIf * 2.0F;
   }
@@ -71,7 +71,8 @@ std::vector<Solutions<6>> UR5RobotArm::inverseKinematics(const Pose end_pose)
     std::sort(thetas.begin(),thetas.end(),[&thetas](float a,float b){ return a < b;});
 
     for(int i = 0;i < 2;i++){
-    
+    //theta1 = thetas[thetas.size()-1];
+    // theta1 = thetas[0];
     theta1 = (i == 1) ? thetas[thetas.size()-1] : thetas[0];
     if(theta1 > M_PIf * 1.5f)
        theta1 -= M_PIf * 2.0f;
@@ -88,7 +89,8 @@ std::vector<Solutions<6>> UR5RobotArm::inverseKinematics(const Pose end_pose)
       convertAngle(theta1);
       convertAngle(theta5);
       convertAngle(theta6);
-    
+      // theta5 = theta5 < 0 ? -theta5 -M_PIf : theta5;
+      // theta6 = theta6 < 0 ? -theta6 -M_PIf : theta6;
       dh_table_[0][3] = theta1;
       dh_table_[4][3] = theta5;
       dh_table_[5][3] = theta6;
@@ -104,10 +106,11 @@ std::vector<Solutions<6>> UR5RobotArm::inverseKinematics(const Pose end_pose)
       theta5 = M_PIf/2.0f;
       theta234 = atan2(P(2,2),-P(0,2));
       theta6 = atan2(-P(1,1),P(1,0));
+      std::cout<<"kao"<<std::endl;
     }
     else if(pow(P(1,2)+1,2) < 1e-3)//等下补充
     {
-
+      std::cout<<"wow"<<std::endl;
     }
     else
     {
@@ -149,7 +152,7 @@ bool UR5RobotArm::isRightSolution(const Solutions<6> solution,const Pose end_pos
 
 void UR5RobotArm::mutipleSolution(float theta234,float x,float z,float theta5)
 {
-   const static int max_iterations = 30;
+   const static int max_iterations = 35;
     Eigen::Vector<float,3> diff; //保存差值
     Eigen::Vector<float,3> current; //保存上一次状态
     Eigen::Vector<float,3> target; // 目标状态
@@ -168,10 +171,11 @@ void UR5RobotArm::mutipleSolution(float theta234,float x,float z,float theta5)
     const float len3 = std::abs(dh_table_[4][1]);
 
     // 初始化状态
+    float position_error,angle_error;
     for(int k = 0; k < max_iterations;k++)
     {
-      float position_error = std::abs(target[0]-current[0])+std::abs(target[1]-current[1]);
-      float angle_error = std::abs(target[2]-current[2]);
+      position_error = std::abs(target[0]-current[0])+std::abs(target[1]-current[1]);
+      angle_error = std::abs(target[2]-current[2]);
       if(position_error > 0.4f || angle_error > 0.06f){//满足迭代条件则继续迭代，直到达到收敛条件
       // 根据当前角度求出对应的雅各比矩阵
       jacobian_matrix(0,0) = -len1 * sin(angle(0)) - len2 * sin(angle(0)+angle(1))
@@ -197,6 +201,8 @@ void UR5RobotArm::mutipleSolution(float theta234,float x,float z,float theta5)
       else 
       {
         std::cout<<"we get the solution at "<<k+1<<" times"<<std::endl;
+        std::cout<<"possition error is "<<position_error<<std::endl;
+        std::cout<<"total angle error is "<<angle_error<<std::endl;
         break;
       }
       // 正向运动学求得对应齐次矩阵
@@ -210,21 +216,35 @@ void UR5RobotArm::mutipleSolution(float theta234,float x,float z,float theta5)
       current(1) = transform_matrix(2,3);
       current(2) = angle(0) + angle(1) + angle(2);
     }
-  
-    float theta2 = angle(0) / 2.0f / M_PIf;
-    float theta3 = angle(1) / 2.0f / M_PIf;
-    float theta4 = angle(2) / 2.0f / M_PIf;
-    theta2 = (theta2 - std::trunc(theta2))*2.0f*M_PIf;
-    theta3 = (theta3 - std::trunc(theta3))*2.0f*M_PIf;
-    theta4 = (theta4 - std::trunc(theta4))*2.0f*M_PIf;
+
+    dh_table_[1][3] = angle(0);
+    dh_table_[2][3] = angle(1);
+    dh_table_[3][3] = angle(2);
+    // Eigen::Matrix4f pose = forwardKinematics(dh_table_);
+    // std::cout<<"------Reach Matrix------"<<std::endl;
+    // for(int f = 0;f < 4;f++)
+    // {
+    //   std::cout<<"第"<<f+1<<"行"<<std::endl;
+    //   for(int j = 0;j < 4;j++)
+    //   {
+    //     std::cout<<pose(f,j)<<" ";
+    //   }
+    //   std::cout<<std::endl;
+    // }
+    // float theta2 = angle(0) / 2.0f / M_PIf;
+    // float theta3 = angle(1) / 2.0f / M_PIf;
+    // float theta4 = angle(2) / 2.0f / M_PIf;
+    // theta2 = (theta2 - std::trunc(theta2))*2.0f*M_PIf;
+    // theta3 = (theta3 - std::trunc(theta3))*2.0f*M_PIf;
+    // theta4 = (theta4 - std::trunc(theta4))*2.0f*M_PIf;
 
 
-    convertAngle(theta2);
-    convertAngle(theta3);
-    convertAngle(theta4);
+    // convertAngle(theta2);
+    // convertAngle(theta3);
+    // convertAngle(theta4);
 
-    dh_table_[1][3] = theta2;
-    dh_table_[2][3] = theta3;
-    dh_table_[3][3] = theta4;
+    // dh_table_[1][3] = theta2;
+    // dh_table_[2][3] = theta3;
+    // dh_table_[3][3] = theta4;
 }
 

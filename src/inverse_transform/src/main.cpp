@@ -6,8 +6,8 @@
 #include<mujoco/mujoco.h>
 #include<mujoco/mjmodel.h>
 
-#include<robot_control/ur5_inverse_kinematics.h>
-#include<robot_control/util.h>
+#include<inverse_transform/ur5_inverse_kinematics.h>
+#include<inverse_transform/util.h>
 
 #include<GLFW/glfw3.h>
 
@@ -121,7 +121,8 @@ int main()
     UR5RobotArm robot;
 
     char error_msg[1000] = "Could not load binary model !";
-    std::string file_path = "/home/up/rm_mujoco_simulate/src/robotic_control/scene.xml";
+    std::string file_path = "/home/up/rm_mujoco_simulate/src/inverse_transform/scene.xml";
+    //"/home/up/rm_mujoco_simulate/src/inverse_transform/scene.xml";
     model = mj_loadXML(file_path.c_str(),0,error_msg,1000);
 
     data = mj_makeData(model);
@@ -168,7 +169,7 @@ int main()
     solution.theta[5] = 0.0f;
     Eigen::Matrix4f pose = forwardKinematics(robot.dh_table_);
 
-    float radius = 25.0;
+    float radius = 35.0;
     float x = pose(0,3) - radius;
     float z = pose(2,3);
     float time_prev;
@@ -212,7 +213,6 @@ int main()
               std::cout<<"规划失败 "<<std::endl;
               failed_count++;
             }
-            std::cout<<" "<<std::endl;
             std::cout<<" "<<std::endl;
             Eigen::Vector2f new_pos = generateCircle(data->time-t_init,radius,x,z,1.0);
             pose(0,3) = new_pos(0);

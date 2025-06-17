@@ -1,5 +1,6 @@
 #include<GL/gl.h>
-#include<chrono>
+#include<GLFW/glfw3.h>
+
 #include<mujoco/mjdata.h>
 #include<mujoco/mjrender.h>
 #include<mujoco/mjvisualize.h>
@@ -9,8 +10,7 @@
 #include<inverse_transform/ur5_inverse_kinematics.h>
 #include<inverse_transform/util.h>
 
-#include<GLFW/glfw3.h>
-
+#include<chrono>
 #include<iostream>
 #include<cmath>
 #include<thread>

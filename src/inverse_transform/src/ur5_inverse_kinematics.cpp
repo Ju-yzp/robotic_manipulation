@@ -42,7 +42,7 @@ UR5RobotArm::UR5RobotArm()
 
 // TODO：尝试多种逆解求法
 std::vector<Solutions<6>> UR5RobotArm::inverseKinematics(const Pose end_pose)
-{
+{                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
     Solutions<6> solution;
     std::vector<Solutions<6>> solutions;
     Eigen::Matrix4f end_to6,temp_pose;
@@ -75,7 +75,7 @@ std::vector<Solutions<6>> UR5RobotArm::inverseKinematics(const Pose end_pose)
     if(theta1 > M_PIf * 1.5f)
        theta1 -= M_PIf * 2.0f;
     theta1 -= M_PIf/2.0f;
-    // std::cout<<theta1<<std::endl;
+
     Eigen::Matrix4f P = axisTransform(dh_table_[0][0],dh_table_[0][1],dh_table_[0][2],theta1).inverse()
                         * temp_pose;
     
@@ -87,8 +87,7 @@ std::vector<Solutions<6>> UR5RobotArm::inverseKinematics(const Pose end_pose)
       convertAngle(theta1);
       convertAngle(theta5);
       convertAngle(theta6);
-      // theta5 = theta5 < 0 ? -theta5 -M_PIf : theta5;
-      // theta6 = theta6 < 0 ? -theta6 -M_PIf : theta6;
+
       dh_table_[0][3] = theta1;
       dh_table_[4][3] = theta5;
       dh_table_[5][3] = theta6;

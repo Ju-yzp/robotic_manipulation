@@ -3,6 +3,7 @@
 
 #include<cmath>
 #include<vector>
+#include<iostream>
 
 namespace rrt{
 class Node{
@@ -37,6 +38,8 @@ float get_node_distance(Node * node)
 
 void set_parent(Node *parent){ parent_ = parent; }
 
+void add_child(Node *child){ children_.push_back(child); }
+
 Node* get_parent(){ return parent_;}
 
 float get_x(){ return x_; }
@@ -64,7 +67,7 @@ Node* get_nearest_node(Node *random_node)
            min_distance = distance;
            nearest_node = node; }
     }
-
+    std::cout<<"The nearest node away "<<min_distance<<std::endl;
     return nearest_node;
 }
 
@@ -73,17 +76,20 @@ std::vector<Node> get_path()
     std::vector<Node> plan_path;
 
     Node *node = nodes_[nodes_.size()-1];
-    while(!node->get_parent())
+    while(node->get_parent())
     {
         Node temp_node(node->get_x(),node->get_y(),node->get_z());
         plan_path.emplace_back(temp_node);
         node = node->get_parent();
     }
+     Node temp_node(node->get_x(),node->get_y(),node->get_z());
+     plan_path.emplace_back(temp_node);
     return plan_path;
 }
 
 void add_node(Node *new_node)
 {
+    std::cout<<"Add a new node into tree"<<std::endl;
     nodes_.push_back(new_node);
 }
 

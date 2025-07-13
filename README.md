@@ -1,17 +1,30 @@
-# mujoco_sim_practise
+# Mujoco_Sim_Practise
 
-## Consist of project
+## Feature
 
-1.inverse_transform:
-ur5e机械臂的逆运动学解算部分。
+- 通过实现八叉树(邻域快速搜索特性)，建立机械臂周围环境，后面做一版过滤机械臂本体，应该有很多种方案可以选择
+- 通过rrt实现路径规划，轨迹规划部分由电机控制器实现
+- 根据UR5E的解析解的有限性，可以通过检测每一个解对应的机械臂包络体集是否与障碍物发生碰撞，选择有效解
 
-2.path_planing:
-路径规划器模块，通过RRT*等算法生成一条安全路径，避免与周围障碍物产生碰撞。
+## Quick Start
 
-3.robot_arm_controller:
-通过自定义的PID(或者MPC)控制器，实现对仿真电机的控制。
+```sh
+# 配置环境:mujoco,glfw,eigen
+# 等我到时候写一个脚本吧，自动检测计算机系统已经存在的包
+# 如果包存在，但是版本不兼容就会自动更新包，然后安装缺失的包
 
-## Insight
+mkdir build && cd build
+cmake ..
+make -j<num> #根据自己实际核心数目选择并行编译线程数量，我的项目也不是很大
+```
 
-在未来如果选择与一些语义分析模型结合，那么将会增加应用场景。通过分析当前执行的任务，可以知道对于发生碰撞的容忍度是多少，
-进而动态设置路径规划模块参数，更加智能化地服务人类。
+## Outlook
+
+- 通过自己实现的Scence类，设计神经网络对周围物体进行分类，而不是只是被简单定义为障碍物与被抓取物，周围物体应该拥有更多的信息
+
+- 由于作者还处于大学二年级阶段，所以对于软件设计，机械臂，数学，电机控制等方面不是很深入，所以后面会慢慢改进本项目
+
+## Contact Way
+
+- 📧 邮箱：Jup230551l@outlook.com
+- 🔗 GitHub：[![GitHub](https://img.shields.io/badge/GitHub-Ju-yzp-blue)](https://github.com/Ju-yzp)

@@ -7,7 +7,7 @@
 
 #include <motion_planning/inverse_kinematic_base_interface.hpp>
 #include <motion_planning/util.hpp>
-#include <motion_planning/robot_model.hpp>
+#include <motion_planning/robotModel.hpp>
 
 namespace motion_planning {
 

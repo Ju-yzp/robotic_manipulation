@@ -68,13 +68,13 @@ all_solutions.solutions_.push_back(std::array<float,DOF>{-theta1[index],
                                                             arm_solution[2],
                                                             wrist_solution[inner_index][1],
                                                             wrist_solution[inner_index][2]});
-std::cout<<"theta1 "<<-theta1[index]<<std::endl;
-std::cout<<"theta2 "<<arm_solution[0]<<std::endl;
-std::cout<<"theta3 "<<arm_solution[1]<<std::endl;
-std::cout<<"theta4 "<<arm_solution[2]<<std::endl;
-std::cout<<"theta5 "<<wrist_solution[inner_index][1]<<std::endl;
-std::cout<<"theta6 "<<wrist_solution[inner_index][2]<<std::endl;
-std::cout<<std::endl;
+// std::cout<<"theta1 "<<-theta1[index]<<std::endl;
+// std::cout<<"theta2 "<<arm_solution[0]<<std::endl;
+// std::cout<<"theta3 "<<arm_solution[1]<<std::endl;
+// std::cout<<"theta4 "<<arm_solution[2]<<std::endl;
+// std::cout<<"theta5 "<<wrist_solution[inner_index][1]<<std::endl;
+// std::cout<<"theta6 "<<wrist_solution[inner_index][2]<<std::endl;
+// std::cout<<std::endl;
 }
 }
 }
@@ -148,13 +148,13 @@ void InverseKinematicSolver::getWristThetas(const Eigen::Matrix4f pose,float *wr
  */
 if(pow(pose(1,2),2) < 1E-3)
 {
-wrist_solution[0] = atan2(-pose(2,2),pose(0,2));
+wrist_solution[0] = atan2(pose(2,2),-pose(0,2));
 wrist_solution[1] = M_PIf/2.0f;
-wrist_solution[2] = atan2(pose(1,1),-pose(1,0));
+wrist_solution[2] = atan2(-pose(1,1),pose(1,0));
 
-wrist_solution[3] = atan2(pose(2,2),-pose(0,2));
+wrist_solution[3] = atan2(-pose(2,2),pose(0,2));
 wrist_solution[4] = -M_PIf/2.0f;
-wrist_solution[5] = atan2(-pose(1,1),pose(1,0));
+wrist_solution[5] = atan2(pose(1,1),-pose(1,0));
 }
 
 else if(std::abs(pow(pose(1,2),2)-1.0f) < 1E-3)

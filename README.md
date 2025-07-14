@@ -1,6 +1,6 @@
-# Mujoco_Sim_Practise
+# Mujoco_Simulate_Practise
 
-## Feature
+## Features
 
 - 通过实现八叉树(邻域快速搜索特性)，建立机械臂周围环境，后面做一版过滤机械臂本体，应该有很多种方案可以选择
 - 通过rrt实现路径规划，轨迹规划部分由电机控制器实现

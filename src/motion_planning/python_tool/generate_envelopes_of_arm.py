@@ -100,8 +100,8 @@ if __name__ == '__main__':
 
     # model_files.append('/home/up/robotics-manipulation/src/mujoco_resource/assets/forearm_0.obj')
     # model_files.append('/home/up/robotics-manipulation/src/mujoco_resource/assets/forearm_1.obj')
-    model_files.append('/home/up/robotics-manipulation/src/mujoco_resource/assets/forearm_2.obj')
-    # model_files.append('/home/up/robotics-manipulation/src/mujoco_resource/assets/forearm_3.obj')
+    # model_files.append('/home/up/robotics-manipulation/src/mujoco_resource/assets/forearm_2.obj')
+    model_files.append('/home/up/robotics-manipulation/src/mujoco_resource/assets/wrist3.obj')
 
     # try:
     #     if not os.path.exists(specify_search_directory):

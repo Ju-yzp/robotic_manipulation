@@ -88,32 +88,38 @@
       <geom mesh="base_0" material="black" class="visual"/>
       <geom mesh="base_1" material="jointgray" class="visual"/>
       
-      <!-- <geom name="pass_through_box" 
-        type="box"              
-        pos="0.2 0.3 0.6"           
-        size="0.1 0.1 0.05"       
-        rgba="0.5 0.5 0.5 0.3"   
-        contype="0"              
-        conaffinity="0"         
-        class="visual"/>  
+      <!-- <geom type="cylinder" name="base_cylinder" pos="0.0 0.0 0.06" 
+            quat="1.0 0.0 0.0 0.0 " 
+            size="0.076 0.0756" 
+            rgba="0.7 0.0 0.0 0.5"
+            class="visual"/> -->
         
-      <geom name="center_ball"
+      <geom name="base_sphere"
         type="sphere" 
-        pos="0.2 0.3 0.6"
-        size="0.02" 
-        rgba="1 0 0 0.8" 
+        pos="0.0 0.0 0.06"
+        size="0.102" 
+        rgba="1 0 0 0.4" 
         contype="0"
         conaffinity="0"
-        class="visual"/> -->
+        class="visual"/>
 
       <body name="shoulder_link" pos="0 0 0.163">
         <inertial mass="3.7" pos="0 0 0" diaginertia="0.0102675 0.0102675 0.00666"/>
         <joint name="shoulder_pan" axis="0 0 1"/>
-
+<!-- 
         <geom type="cylinder" name="cylinder_geom" pos="0.0 0.0 0.0" 
               quat="0.70977599 -0.00745574 -0.0135788  -0.7042571 " 
               size="0.06 0.0723" 
-              rgba="0.7 0.0 0.0 0.5"/>
+              rgba="0.7 0.0 0.0 0.5"
+              class="visual"/> -->
+       <geom name="shoulder_sphere"
+        type="sphere" 
+        pos="0.0 0.0 0.0"
+        size="0.092" 
+        rgba="1 0 0 0.4" 
+        contype="0"
+        conaffinity="0"
+        class="visual"/>
 
         <geom mesh="shoulder_0" material="urblue" class="visual"/>
         <geom mesh="shoulder_1" material="black" class="visual"/>
@@ -123,11 +129,47 @@
           <inertial mass="8.393" pos="0 0 0.2125" diaginertia="0.133886 0.133886 0.0151074"/>
           <joint name="shoulder_lift"/>
 
-          <geom type="cylinder" name="pca_cylinder_geom" pos="0.0 0.0 0.21" 
+          <!-- <geom type="cylinder" name="pca_cylinder_geom" pos="0.0 0.0 0.21" 
                 quat="1.0 0.0 0.0 0.0 " 
                 size="0.06 0.28" 
                 rgba="0.7 0.0 0.0 0.5"
-                class="visual"/>
+                class="visual"/> -->
+
+        <geom name="upper_arm_sphere_1"
+              type="sphere" 
+              pos="0.0 0.0 0.28"
+              size="0.092" 
+              rgba="1 0 0 0.8" 
+              contype="0"
+              conaffinity="0"
+              class="visual"/>
+
+        <geom name="upper_arm_sphere_2"
+              type="sphere" 
+              pos="0.0 0.0 0.42"
+              size="0.092" 
+              rgba="1 0 0 0.8" 
+              contype="0"
+              conaffinity="0"
+              class="visual"/>
+
+        <geom name="upper_arm_sphere_3"
+              type="sphere" 
+              pos="0.0 0.0 0.14"
+              size="0.092" 
+              rgba="1 0 0 0.8" 
+              contype="0"
+              conaffinity="0"
+              class="visual"/>
+
+        <geom name="upper_arm_sphere_4"
+              type="sphere" 
+              pos="0.0 0.0 0.0"
+              size="0.092" 
+              rgba="1 0 0 0.8" 
+              contype="0"
+              conaffinity="0"
+              class="visual"/>
 
           <geom mesh="upperarm_0" material="linkgray" class="visual"/>
           <geom mesh="upperarm_1" material="black" class="visual"/>
@@ -139,12 +181,43 @@
             <inertial mass="2.275" pos="0 0 0.196" diaginertia="0.0311796 0.0311796 0.004095"/>
             <joint name="elbow" class="joint_limited"/>
 
-          <geom type="cylinder" name="pca_cy_geom" pos="0.0 0.014 0.258" 
+          <!-- <geom type="cylinder" name="pca_cy_geom" pos="0.0 0.012 0.249" 
               quat="1.0 0.0 0.0 0.0 " 
-              size="0.06 0.20" 
+              size="0.06 0.19" 
               rgba="0.7 0.0 0.0 0.5"
+              class="visual"/> -->
+
+          <geom name="upperarm_sphere_1"
+              type="sphere" 
+              pos="0.0 0.012 0.249"
+              size="0.08846" 
+              rgba="1 0 0 0.4" 
+              contype="0"
+              conaffinity="0"
               class="visual"/>
 
+          <geom name="upperarm_sphere_2"
+              type="sphere" 
+              pos="0.0 0.012 0.119"
+              size="0.08846" 
+              rgba="1 0 0 0.4" 
+              contype="0"
+              conaffinity="0"
+              class="visual"/>
+              
+          <geom name="upperarm_sphere_3"
+              type="sphere" 
+              pos="0.0 0.012 0.379"
+              size="0.08846" 
+              rgba="1 0 0 0.4" 
+              contype="0"
+              conaffinity="0"
+              class="visual"/>
+          <!-- <geom type="cylinder" name="forearm_1_cylinder" pos="0.0 0.0 0.1364" 
+              quat="1.0 0.0 0.0 0.0 " 
+              size="0.048 0.203" 
+              rgba="0.7 0.0 0.0 0.5"
+              class="visual"/> -->
             <geom mesh="forearm_0" material="urblue" class="visual"/>
             <geom mesh="forearm_1" material="linkgray" class="visual"/>
             <geom mesh="forearm_2" material="black" class="visual"/>
@@ -154,6 +227,22 @@
             <body name="wrist_1_link" pos="0 0 0.392" quat="1 0 1 0">
               <inertial mass="1.219" pos="0 0.127 0" diaginertia="0.0025599 0.0025599 0.0021942"/>
               <joint name="wrist_1"/>
+
+              <!-- <geom type="cylinder" name="wrist_1_cylinder" pos="0.0 0.11666 0.005" 
+              quat="1.0 0.0 0.0 0.0 " 
+              size="0.045 0.06" 
+              rgba="0.7 0.0 0.0 0.5"
+              class="visual"/> -->
+
+              <geom name="wrist_sphere_1"
+                    type="sphere" 
+                    pos="0.0 0.11666 0.005"
+                    size="0.075" 
+                    rgba="1 0 0 0.4" 
+                    contype="0"
+                    conaffinity="0"
+                    class="visual"/>
+
               <geom mesh="wrist1_0" material="black" class="visual"/>
               <geom mesh="wrist1_1" material="urblue" class="visual"/>
               <geom mesh="wrist1_2" material="jointgray" class="visual"/>
@@ -161,18 +250,47 @@
               <body name="wrist_2_link" pos="0 0.127 0">
                 <inertial mass="1.219" pos="0 0 0.1" diaginertia="0.0025599 0.0025599 0.0021942"/>
                 <joint name="wrist_2" axis="0 0 1"/>
+<!-- 
+                <geom type="cylinder" name="wrist_2_cylinder" pos="0.0 0.0 0.09" 
+                      quat="1.0 0.0 0.0 0.0 " 
+                      size="0.045 0.0566" 
+                      rgba="0.7 0.0 0.0 0.5"
+                      class="visual"/> -->
+
+              <geom name="wrist_sphere_2"
+                    type="sphere" 
+                    pos="0.0 0.0 0.09"
+                    size="0.07" 
+                    rgba="1 0 0 0.4" 
+                    contype="0"
+                    conaffinity="0"
+                    class="visual"/>
+                
                 <geom mesh="wrist2_0" material="black" class="visual"/>
                 <geom mesh="wrist2_1" material="urblue" class="visual"/>
                 <geom mesh="wrist2_2" material="jointgray" class="visual"/>
                 <geom class="collision" size="0.04 0.06" pos="0 0 0.04"/>
                 <geom class="collision" pos="0 0.02 0.1" quat="1 1 0 0" size="0.04 0.04"/>
                 <body name="wrist_3_link" pos="0 0 0.1">
-                <!-- <geom class="x_axis" fromto="0 0 0 0.1 0 0"/>
-		            <geom class="y_axis" fromto="0 0 0 0 0.1 0"/>
-	              <geom class="z_axis" fromto="0 0 0 0 0 0.1"/> -->
+
                   <inertial mass="0.1879" pos="0 0.0771683 0" quat="1 0 0 1"
                     diaginertia="0.000132134 9.90863e-05 9.90863e-05"/>
                   <joint name="wrist_3"/>
+                  <!-- <geom type="cylinder" name="wrist_3_cylinder" pos="0.0 0.0856 0.01" 
+                        quat="1.0 0.0 0.0 0.0" 
+                        size="0.037988 0.04652" 
+                        rgba="0.7 0.0 0.0 0.5"
+                        class="visual"/> -->
+
+                  <geom name="wrist_sphere_3"
+                    type="sphere" 
+                    pos="0.0 0.0856 0.01"
+                    size="0.06" 
+                    rgba="1 0 0 0.4" 
+                    contype="0"
+                    conaffinity="0"
+                    class="visual"/>
+                
                   <geom material="linkgray" mesh="wrist3" class="visual"/>
                   <geom class="eef_collision" pos="0 0.08 0" quat="1 1 0 0" size="0.04 0.02"/>
                   <site name="attachment_site" size="0.01" pos="0 0.1 0" quat="-1 1 1 1" rgba="1 0 0 1" group="1"/>

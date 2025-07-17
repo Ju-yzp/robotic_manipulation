@@ -8,7 +8,7 @@
 
 namespace motion_planning {
 
-InverseKinematicSolver::InverseKinematicSolver(std::shared_ptr<RobotModel<DOF>> &robot_model)
+InverseKinematicSolver::InverseKinematicSolver(std::shared_ptr<RobotModel<UR5E_DOF>> &robot_model)
 :robot_model_(robot_model)
 {}
 
@@ -16,9 +16,9 @@ InverseKinematicSolver::~InverseKinematicSolver()
 {}
 
 // 解析解解法
-Solutions<DOF> InverseKinematicSolver::inverseKinematic(Eigen::Matrix4f target_pose)
+Solutions<UR5E_DOF> InverseKinematicSolver::inverseKinematic(Eigen::Matrix4f target_pose)
 {
-Solutions<DOF> all_solutions;
+Solutions<UR5E_DOF> all_solutions;
 all_solutions.solutions_.reserve(8);
 
 Eigen::Matrix4f frame6_to_frame0 = target_pose;
@@ -61,7 +61,7 @@ std::vector<std::array<float,3>> arm_solutions;
 getArmThetas(wrist_solution[inner_index][0],arm_solutions, frame6_to_frame1);
 for(auto arm_solution:arm_solutions)
 {
-all_solutions.solutions_.push_back(std::array<float,DOF>{-theta1[index],
+all_solutions.solutions_.push_back(std::array<float,UR5E_DOF>{-theta1[index],
                                                             arm_solution[0],
                                                             arm_solution[1],
                                                             arm_solution[2],
@@ -196,8 +196,8 @@ float a3 = robot_model_->get_a(3);
 
 float len = sqrt(pow(new_x,2) + pow(new_z,2));
 
-if(a2 + a3 < len || a2 - a3 > len)
-   std::cout<<"Cound't reach specify pose"<<std::endl;
+// if(a2 + a3 < len || a2 - a3 > len)
+//    std::cout<<"Cound't reach specify pose"<<std::endl;
 
 float beta = acos((pow(len,2)+pow(a2,2)-pow(a3,2))/(2.0f*len*a2));
 // float alpha = M_PIf - acos((pow(a2,2)+pow(a3,2)-pow(len,2))/(2.0f*a2*a3));
@@ -212,8 +212,6 @@ if(std::isnan(beta))
 
 float x1 = (new_x - a2 * cos(beta-gama))/a3;
 float y1 =  (new_z + a2 * sin(beta-gama))/-a3;
-// std::cout<<x1<<std::endl;
-// std::cout<<y1<<std::endl;
 float theta3_1 = atan2(y1,x1) - beta + gama;
 
 // Case1:

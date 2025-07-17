@@ -21,6 +21,7 @@ struct JointLimit
 {
 void select_solutions(Solutions<DOF> &solutions)
 {
+solutions.solutions_.erase(
 std::remove_if(solutions.solutions_.begin(),solutions.solutions_.end(),
 [&](auto solution)
 { 
@@ -30,11 +31,12 @@ if(solution[index] < lower_[index] || solution[index] > upper_[index])
 return true;
 }
 return false;
-});
+}),solutions.solutions_.end());
+
 }
 
-std::array<float,DOF> upper_;
-std::array<float,DOF> lower_;
+std::array<float,DOF> upper_; // 上限
+std::array<float,DOF> lower_; // 下限
 
 };
 

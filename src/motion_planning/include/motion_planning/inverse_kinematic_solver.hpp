@@ -12,17 +12,17 @@
 namespace motion_planning {
 
 // UR5E是六轴机械臂
-const size_t DOF = 6;
+const size_t UR5E_DOF = 6;
 
-class InverseKinematicSolver:public virtual InverseKinematicBaseInterface<DOF>
+class InverseKinematicSolver:public virtual InverseKinematicBaseInterface<UR5E_DOF>
 {
 public:
 
-InverseKinematicSolver(std::shared_ptr<RobotModel<DOF>> &robot_model);
+InverseKinematicSolver(std::shared_ptr<RobotModel<UR5E_DOF>> &robot_model);
 
 ~InverseKinematicSolver();
 
-Solutions<DOF> inverseKinematic(Eigen::Matrix4f target_pose) override;
+Solutions<UR5E_DOF> inverseKinematic(Eigen::Matrix4f target_pose) override;
 
 private:
 
@@ -37,7 +37,7 @@ void getArmThetas(float total_theta,std::vector<std::array<float,3>>& arm_soluti
                   Eigen::Matrix4f &pose);
 
 // 机器人模型
-std::shared_ptr<RobotModel<DOF>> robot_model_;
+std::shared_ptr<RobotModel<UR5E_DOF>> robot_model_;
 
 };
 }

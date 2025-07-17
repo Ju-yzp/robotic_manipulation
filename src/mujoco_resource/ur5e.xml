@@ -88,14 +88,38 @@
       <geom mesh="base_0" material="black" class="visual"/>
       <geom mesh="base_1" material="jointgray" class="visual"/>
       
-      <geom class="x_axis" fromto="0 0 0 0.1 0 0"/>
+      <geom type="sphere" name="cylinder_geom" pos="0.1 -0.1 0.3" 
+              quat="0.70977599 -0.00745574 -0.0135788  -0.7042571 " 
+              size="0.03" 
+              rgba="0.0 0.0 1.0 0.5"
+              class="visual"/>
+
+      <geom type="sphere" name="cylinder_ge" pos="-0.03311 0.3778 0.8009" 
+              quat="0.70977599 -0.00745574 -0.0135788  -0.7042571 " 
+              size="0.03" 
+              rgba="0.0 1.0 0.0 0.5"
+              class="visual"/>
+
+      
+      <geom type="sphere" name="cylinder_1" pos="0.1 -0.1 0.700" 
+              quat="0.70977599 -0.00745574 -0.0135788  -0.7042571 " 
+              size="0.06" 
+              rgba="1.0 0.0 0.0 0.5"
+              class="visual"/>
+
+      <geom type="sphere" name="cylinder_2" pos="-0.1 0.5 0.900" 
+              quat="0.70977599 -0.00745574 -0.0135788  -0.7042571 " 
+              size="0.06" 
+              rgba="1.0 0.0 0.0 0.5"
+              class="visual"/>
+      <!-- <geom class="x_axis" fromto="0 0 0 0.1 0 0"/>
       <geom class="y_axis" fromto="0 0 0 0 0.1 0"/>
       <geom class="z_axis" fromto="0 0 0 0 0 0.1"/>
       <geom type="box" name="demo_box" pos="0.1 0.2 0.6" 
             quat="1.0 0.0 0.0 0.0 " 
             size="0.05 0.04 0.07" 
            rgba="0.7 0.0 0.0 0.5"
-           class="visual"/>
+           class="visual"/> -->
 
 <!-- 
         <geom name="base_sphere"
@@ -127,12 +151,7 @@
       <body name="shoulder_link" pos="0 0 0.163">
         <inertial mass="3.7" pos="0 0 0" diaginertia="0.0102675 0.0102675 0.00666"/>
         <joint name="shoulder_pan" axis="0 0 1"/>
-<!-- 
-        <geom type="cylinder" name="cylinder_geom" pos="0.0 0.0 0.0" 
-              quat="0.70977599 -0.00745574 -0.0135788  -0.7042571 " 
-              size="0.06 0.0723" 
-              rgba="0.7 0.0 0.0 0.5"
-              class="visual"/> -->
+
        <!-- <geom name="shoulder_sphere"
         type="sphere" 
         pos="0.0 0.0 0.0"
@@ -267,6 +286,9 @@
               <body name="wrist_2_link" pos="0 0.127 0">
                 <inertial mass="1.219" pos="0 0 0.1" diaginertia="0.0025599 0.0025599 0.0021942"/>
                 <joint name="wrist_2" axis="0 0 1"/>
+                                <!-- <geom class="x_axis" fromto="0 0 0 0.1 0 0"/>
+                <geom class="y_axis" fromto="0 0 0 0 0.1 0"/>
+                <geom class="z_axis" fromto="0 0 0 0 0 0.1"/> -->
 <!-- 
                 <geom type="cylinder" name="wrist_2_cylinder" pos="0.0 0.0 0.09" 
                       quat="1.0 0.0 0.0 0.0 " 
@@ -293,9 +315,9 @@
                   <inertial mass="0.1879" pos="0 0.0771683 0" quat="1 0 0 1"
                     diaginertia="0.000132134 9.90863e-05 9.90863e-05"/>
                   <joint name="wrist_3"/>
-                <geom class="x_axis" fromto="0 0 0 0.1 0 0"/>
+                <!-- <geom class="x_axis" fromto="0 0 0 0.1 0 0"/>
                 <geom class="y_axis" fromto="0 0 0 0 0.1 0"/>
-                <geom class="z_axis" fromto="0 0 0 0 0 0.1"/>
+                <geom class="z_axis" fromto="0 0 0 0 0 0.1"/> -->
                   <!-- <geom type="cylinder" name="wrist_3_cylinder" pos="0.0 0.0856 0.01" 
                         quat="1.0 0.0 0.0 0.0" 
                         size="0.037988 0.04652" 

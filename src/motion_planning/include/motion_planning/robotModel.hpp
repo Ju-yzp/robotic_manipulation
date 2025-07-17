@@ -29,6 +29,16 @@ double transform_y;
 double transform_z;
 };
 
+struct WorkSpace// 工作空间
+{
+float bound_min_x = -800.0f;
+float bound_max_x = 800.0f;
+float bound_min_y = 850.f;
+float bound_max_y = 850.0f;
+float bound_min_z = 100.0f;
+float bound_max_z = 900.0f;
+};
+
 template <std::size_t DOF>
 class RobotModel
 {
@@ -70,6 +80,8 @@ float get_d(size_t index){ return d_[index]; }
 float get_alpha(size_t index){ return alpha_[index]; }
 
 float get_theta(size_t index){ return theta_[index]; }
+
+WorkSpace get_workspace(){ return worksapce_; }
 
 Eigen::Matrix4f get_endeffector_status()
 {
@@ -127,7 +139,7 @@ envelope.transform_x = goal_pos(0);
 envelope.transform_y = goal_pos(1);
 envelope.transform_z = goal_pos(2);
 
-std::cout<<goal_pos(0)<<" "<<goal_pos(1)<<" "<<goal_pos(2)<<std::endl;
+// std::cout<<goal_pos(0)<<" "<<goal_pos(1)<<" "<<goal_pos(2)<<std::endl;
 // 遍历所有障碍物，看看是否发生碰撞
 for(const auto& obstacble_ptr:scence.get_obstacles())
 {
@@ -167,6 +179,9 @@ std::array<float,DOF> theta_;
 
 // 球形包络体集
 std::map<std::size_t,std::vector<SperhreEnvelope>> envelopes_;
+
+// 机械臂工作空间
+WorkSpace worksapce_;
 };
 }
 #endif

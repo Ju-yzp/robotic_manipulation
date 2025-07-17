@@ -4,7 +4,6 @@
 
 #include <motion_planning/inverse_kinematic_solver.hpp>
 
-
 #include <Eigen/Dense>
 
 namespace motion_planning {
@@ -50,8 +49,8 @@ Eigen::Matrix4f frame6_to_frame1 = frameTransform(robot_model_->get_a(0),
 
 frame6_to_frame1(1,3) -= std::abs(robot_model_->get_d(1));
 
-Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
-std::cout << frame6_to_frame1.format(CleanFmt) << std::endl << std::endl;
+// Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+// std::cout << frame6_to_frame1.format(CleanFmt) << std::endl << std::endl;
 float wrist_solution[2][3];
 getWristThetas(frame6_to_frame1, wrist_solution[0]);
 
@@ -213,8 +212,8 @@ if(std::isnan(beta))
 
 float x1 = (new_x - a2 * cos(beta-gama))/a3;
 float y1 =  (new_z + a2 * sin(beta-gama))/-a3;
-std::cout<<x1<<std::endl;
-std::cout<<y1<<std::endl;
+// std::cout<<x1<<std::endl;
+// std::cout<<y1<<std::endl;
 float theta3_1 = atan2(y1,x1) - beta + gama;
 
 // Case1:

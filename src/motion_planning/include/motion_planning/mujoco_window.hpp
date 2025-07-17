@@ -9,9 +9,11 @@
 #include <mujoco/mjvisualize.h>
 #include <mujoco/mujoco.h>
 #include <mujoco/mjmodel.h>
-
 #include <iostream>
+
 #include <cmath>
+
+namespace mujoco_resource {
 
 // mujoco资源
 mjModel *model = nullptr;
@@ -28,6 +30,8 @@ bool button_right = false;
 double lastx = 0;
 double lasty = 0;
 
+
+
 // 将键盘行为与窗口事件进行关联
 void keyboard(GLFWwindow *window, int key, int scancdataode, int act,
               int mods) {
@@ -38,7 +42,6 @@ void keyboard(GLFWwindow *window, int key, int scancdataode, int act,
   }
 }
 
-// 将鼠标行为与窗口事件进行关联
 void mouse_button(GLFWwindow *window, int button, int act, int mods) {
   // update button state
   button_left =
@@ -52,7 +55,6 @@ void mouse_button(GLFWwindow *window, int button, int act, int mods) {
   glfwGetCursorPos(window, &lastx, &lasty);
 }
 
-// 鼠标移动
 void mouse_move(GLFWwindow *window, double xpos, double ypos) {
   // no buttons down: nothing to do 
   if (!button_left && !button_middle && !button_right) {
@@ -87,13 +89,11 @@ void mouse_move(GLFWwindow *window, double xpos, double ypos) {
   mjv_moveCamera(model, action, dx / height, dy / height, &scn, &cam);
 }
 
-// 缩放窗口
 void scroll(GLFWwindow *window, double xoffset, double yoffset) {
   // emulate vertical mouse motion = 5% of window height
   mjv_moveCamera(model, mjMOUSE_ZOOM, 0, -0.05 * yoffset, &scn, &cam);
 }
 
-// 获得传感器数据
 std::vector<float> get_sensor_data(const mjModel *model, const mjData *data,
                                    const std::string &sensor_name) {
   int sensor_id = mj_name2id(model, mjOBJ_SENSOR, sensor_name.c_str());
@@ -108,5 +108,5 @@ std::vector<float> get_sensor_data(const mjModel *model, const mjData *data,
   }
   return sensor_data;
 }
-
+}
 #endif

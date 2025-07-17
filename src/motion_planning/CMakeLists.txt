@@ -16,7 +16,10 @@ find_package (Eigen3 3.3 REQUIRED)
 ## Build Library##
 ##################
 
-add_library(${PROJECT_NAME}  src/inverse_kinematic_solver.cpp src/util.cpp  src/scence.cpp)
+add_library(${PROJECT_NAME}  
+            src/inverse_kinematic_solver.cpp 
+            src/util.cpp  
+            src/scence.cpp)
 
 include_directories(include )
 

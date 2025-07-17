@@ -14,7 +14,7 @@ namespace motion_planning {
 // UR5E是六轴机械臂
 const size_t DOF = 6;
 
-class InverseKinematicSolver:public InverseKinematicBaseInterface<DOF>
+class InverseKinematicSolver:public virtual InverseKinematicBaseInterface<DOF>
 {
 public:
 

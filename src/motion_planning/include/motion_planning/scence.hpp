@@ -35,7 +35,7 @@ void add_obstacle(std::shared_ptr<Obstacble> obstacble);
 void add_obstacles(std::vector<std::shared_ptr<Obstacble>> obstacbles);
 
 // 得到所有障碍物
-const std::vector<std::shared_ptr<Obstacble>>& get_obstacles();
+const std::vector<std::shared_ptr<Obstacble>>& get_obstacles()const;
 
 private:
 

@@ -95,15 +95,15 @@ theta_[index] = solution[index];
 }
 // std::cout<<num++<<std::endl;
 Eigen::Matrix4f reach_pose = get_endeffector_status();
-Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
-std::cout << reach_pose.format(CleanFmt) << std::endl << std::endl;
+// Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+// std::cout << reach_pose.format(CleanFmt) << std::endl << std::endl;
 return !checkEndeffectorPose(target_pose,reach_pose);
 }),solutions.solutions_.end());
 
 std::cout<<"Totally had "<<(int)solutions.solutions_.size()<<" vaild solutions"<<std::endl;
 }
 
-bool isOccurCollision(Scence& scence)
+bool isOccurCollision(const Scence& scence)
 {
 Eigen::Matrix4f tranform_matrix = Eigen::Matrix4f::Identity();
 
@@ -111,6 +111,7 @@ Eigen::Matrix4f tranform_matrix = Eigen::Matrix4f::Identity();
 if( scence.get_obstacles().size() == 0)
    return false;
 
+bool flag{false};
 // 得到每个包络体在机械臂基底坐标系下的坐标
 for(size_t index{0}; index < DOF; index++)
 {
@@ -118,7 +119,7 @@ for(size_t index{0}; index < DOF; index++)
 tranform_matrix = tranform_matrix * frameTransform(a_[index],d_[index],alpha_[index], theta_[index]);
 Eigen::Vector4f position;
 
-for(auto envelope:envelopes_[index])
+for(auto &envelope:envelopes_[index])
 {
 position<<envelope.x,envelope.y,envelope.z,1.0f;
 Eigen::Vector4f goal_pos = tranform_matrix * position;
@@ -126,11 +127,11 @@ envelope.transform_x = goal_pos(0);
 envelope.transform_y = goal_pos(1);
 envelope.transform_z = goal_pos(2);
 
+std::cout<<goal_pos(0)<<" "<<goal_pos(1)<<" "<<goal_pos(2)<<std::endl;
 // 遍历所有障碍物，看看是否发生碰撞
 for(const auto& obstacble_ptr:scence.get_obstacles())
 {
 // TODO：目前是使用球形障碍物进行算法测试，后面将会使用八叉树表达障碍物的存在
-
 std::shared_ptr<SphereObstacle> ptr = std::dynamic_pointer_cast<SphereObstacle>(obstacble_ptr);
 double center_dist = pow(ptr->x-envelope.transform_x,2)+
                      pow(ptr->y-envelope.transform_y,2)+
@@ -138,15 +139,21 @@ double center_dist = pow(ptr->x-envelope.transform_x,2)+
 
 if(sqrt(center_dist) < ptr->radius + envelope.radius){
     std::cout<<"Obstacle occur collision with envelope belongede to the "<<index<<" arm"<<std::endl;
-   return true;
+    flag = true;
 }
 }
 
 }
 }
 
-return false;
+return flag;
 }
+
+std::vector<SperhreEnvelope> get_envelope(size_t index)
+{
+    return envelopes_[index];
+}
+
 private:
 
 // 关节限制

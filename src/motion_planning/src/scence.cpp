@@ -12,7 +12,7 @@ void Scence::add_obstacles(std::vector<std::shared_ptr<Obstacble>> obstacbles)
 obstacles_.insert(obstacbles.begin(),obstacbles.end(),obstacles_.end());
 }
 
-const std::vector<std::shared_ptr<Obstacble>>& Scence::get_obstacles()
+const std::vector<std::shared_ptr<Obstacble>>& Scence::get_obstacles()const
 {
 return obstacles_;
 }

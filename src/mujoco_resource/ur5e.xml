@@ -87,21 +87,84 @@
       <inertial mass="4" pos="0 0 0" diaginertia="0.00443333156 0.00443333156 0.0072"/>
       <geom mesh="base_0" material="black" class="visual"/>
       <geom mesh="base_1" material="jointgray" class="visual"/>
+<!-- 
+      <geom type="sphere" name="envelope_1_1" pos="-0.0000414131 0.254768 0.343381" 
+              quat="0.70977599 -0.00745574 -0.0135788  -0.7042571 " 
+              size="0.092" 
+              rgba="1.0 0.0 0.0 0.5"
+              class="visual"/>
+
+      <geom type="sphere" name="envelope_1_2" pos="0.0574403 0.344871 0.433571" 
+              quat="0.70977599 -0.00745574 -0.0135788  -0.7042571 " 
+              size="0.092" 
+              rgba="1.0 0.0 0.0 0.5"
+              class="visual"/>
+
       
-      <geom type="sphere" name="cylinder_geom" pos="0.1 -0.1 0.3" 
+      <geom type="sphere" name="envelope_1_3" pos="-0.0582686 0.164665 0.25319" 
+              quat="0.70977599 -0.00745574 -0.0135788  -0.7042571 " 
+              size="0.092" 
+              rgba="1.0 0.0 0.0 0.5"
+              class="visual"/>
+
+      <geom type="sphere" name="envelope_1_4" pos="-0.116123 0.0745617 0.163" 
+              quat="0.70977599 -0.00745574 -0.0135788  -0.7042571 " 
+              size="0.092" 
+              rgba="1.0 0.0 0.0 0.5"
+              class="visual"/>
+    
+      <geom type="sphere" name="envelope_2_1" pos=" 0.116148 0.216055 0.672421" 
+              quat="0.70977599 -0.00745574 -0.0135788  -0.7042571 " 
+              size="0.08846" 
+              rgba="1.0 0.0 0.0 0.5"
+              class="visual"/>
+
+      <geom type="sphere" name="envelope_2_2" pos="0.138855  0.25142 0.549402" 
+              quat="0.70977599 -0.00745574 -0.0135788  -0.7042571 " 
+              size="0.08846" 
+              rgba="1.0 0.0 0.0 0.5"
+              class="visual"/>
+
+      
+      <geom type="sphere" name="envelope_2_3" pos="0.0934401 0.18069 0.79544" 
+              quat="0.70977599 -0.00745574 -0.0135788  -0.7042571 " 
+              size="0.08846" 
+              rgba="1.0 0.0 0.0 0.5"
+              class="visual"/>
+
+      <geom type="sphere" name="envelope_3_1" pos="0.00310098 0.233701 0.807742" 
+              quat="0.70977599 -0.00745574 -0.0135788  -0.7042571 " 
+              size="0.075" 
+              rgba="1.0 0.0 0.0 0.5"
+              class="visual"/>
+
+      <geom type="sphere" name="envelope_4_1" pos="-0.000777641 0.246798 0.808902" 
+              quat="0.70977599 -0.00745574 -0.0135788  -0.7042571 " 
+              size="0.07" 
+              rgba="1.0 0.0 0.0 0.5"
+              class="visual"/>
+
+      <geom type="sphere" name="envelope_5_1" pos="-0.0214302 0.369906 0.803762" 
+              quat="0.70977599 -0.00745574 -0.0135788  -0.7042571 " 
+              size="0.06" 
+              rgba="1.0 0.0 0.0 0.5"
+              class="visual"/> -->
+
+
+      <geom type="sphere" name="cylinder_geom" pos="0.1 0.2 0.7" 
               quat="0.70977599 -0.00745574 -0.0135788  -0.7042571 " 
               size="0.03" 
               rgba="0.0 0.0 1.0 0.5"
               class="visual"/>
 
-      <geom type="sphere" name="cylinder_ge" pos="-0.03311 0.3778 0.8009" 
+      <!-- <geom type="sphere" name="cylinder_ge" pos="-0.03311 0.3778 0.8009" 
               quat="0.70977599 -0.00745574 -0.0135788  -0.7042571 " 
               size="0.03" 
               rgba="0.0 1.0 0.0 0.5"
               class="visual"/>
 
       
-      <geom type="sphere" name="cylinder_1" pos="0.1 -0.1 0.700" 
+      <geom type="sphere" name="cylinder_1" pos="0.1 0.1 0.700" 
               quat="0.70977599 -0.00745574 -0.0135788  -0.7042571 " 
               size="0.06" 
               rgba="1.0 0.0 0.0 0.5"
@@ -111,15 +174,7 @@
               quat="0.70977599 -0.00745574 -0.0135788  -0.7042571 " 
               size="0.06" 
               rgba="1.0 0.0 0.0 0.5"
-              class="visual"/>
-      <!-- <geom class="x_axis" fromto="0 0 0 0.1 0 0"/>
-      <geom class="y_axis" fromto="0 0 0 0 0.1 0"/>
-      <geom class="z_axis" fromto="0 0 0 0 0 0.1"/>
-      <geom type="box" name="demo_box" pos="0.1 0.2 0.6" 
-            quat="1.0 0.0 0.0 0.0 " 
-            size="0.05 0.04 0.07" 
-           rgba="0.7 0.0 0.0 0.5"
-           class="visual"/> -->
+              class="visual"/> -->
 
 <!-- 
         <geom name="base_sphere"

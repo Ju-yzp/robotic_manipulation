@@ -48,7 +48,7 @@ scence.add_obstacle(obstacble_1);
 std::shared_ptr<SphereObstacle> obstacble_2 = std::make_shared<SphereObstacle>();
 obstacble_2->radius = 60.0f;
 obstacble_2->x = 100.0f;
-obstacble_2->y = -100.0f;
+obstacble_2->y = 100.0f;
 obstacble_2->z = 700.0f;
 scence.add_obstacle(obstacble_2);
 
@@ -144,7 +144,7 @@ Eigen::Matrix4f target_pose;
 
 target_pose << 1.0f,0.0f,0.0f,100.0f,
                0.0f,1.0f,0.0f,-100.0f,
-               0.0f,0.0f,1.0f,300.0f,
+               0.0f,0.0f,1.0f,500.0f,
                0.0f,0.0f,0.0f,1.0f;
 
 
@@ -207,18 +207,25 @@ mjv_makeScene(mujoco_resource::model,&mujoco_resource::scn,2000);
 mjr_makeContext(mujoco_resource::model,&mujoco_resource::con,mjFONTSCALE_150);
 std::cout<<"wow"<<std::endl;
 mjtNum pos;// 记录关节角度用于更新运动学模型
-if(!solutions.solutions_.empty())
-{
-    mujoco_resource::data->qpos[0] = solutions.solutions_[0][0];
-    mujoco_resource::data->qpos[1] = solutions.solutions_[0][1];
-    mujoco_resource::data->qpos[2] = solutions.solutions_[0][2];
-    mujoco_resource::data->qpos[3] = solutions.solutions_[0][3];
-    mujoco_resource::data->qpos[4] = -solutions.solutions_[0][4];
-    mujoco_resource::data->qpos[5] = solutions.solutions_[0][5];
-    std::cout<<"assign the first solution default solution"<<std::endl;
-}
-else 
-    std::cout<<"Failed to find a vaild solution that make robot arm reach the target pose"<<std::endl;
+
+mujoco_resource::data->qpos[0] = 1.0f;
+mujoco_resource::data->qpos[1] = -0.7f;
+mujoco_resource::data->qpos[2] = -1.2f;
+mujoco_resource::data->qpos[3] = 0.2f;
+mujoco_resource::data->qpos[4] = -0.2f;
+mujoco_resource::data->qpos[5] = 1.0f;
+// if(!solutions.solutions_.empty())
+// {
+//     mujoco_resource::data->qpos[0] = solutions.solutions_[0][0];
+//     mujoco_resource::data->qpos[1] = solutions.solutions_[0][1];
+//     mujoco_resource::data->qpos[2] = solutions.solutions_[0][2];
+//     mujoco_resource::data->qpos[3] = solutions.solutions_[0][3];
+//     mujoco_resource::data->qpos[4] = -solutions.solutions_[0][4];
+//     mujoco_resource::data->qpos[5] = solutions.solutions_[0][5];
+//     std::cout<<"assign the first solution default solution"<<std::endl;
+// }
+// else 
+//     std::cout<<"Failed to find a vaild solution that make robot arm reach the target pose"<<std::endl;
 
 // mujoco_resource::data->qpos[0] = 1.0f;
 // mujoco_resource::data->qpos[1] = -0.7f;

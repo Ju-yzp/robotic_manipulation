@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>motion_planning</name>
+  <version>0.0.0</version>
+  <description>机械臂运动规划</description>
+
+  <maintainer email="Jup230551@outlook.com">Jup</maintainer>
+
+  <license>Apache-2.0</license>
+
+  <author email="Jup230551@outlook.com">Jup</author>
+  
+  <!-- 构建工具 -->
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- 依赖库 -->
+  <depend>Eigen3</depend>
+
+  <!-- 导出配置信息 -->
+  <export>
+    <build_type>ament_cmake</build_type>
+    <ament_cmake_export_libraries>motion_planning</ament_cmake_export_libraries>
+    <ament_cmake_export_include_directories>include</ament_cmake_export_include_directories>
+    <ament_cmake_export_dependencies>Eigen3</ament_cmake_export_dependencies>
+  </export>
+</package>

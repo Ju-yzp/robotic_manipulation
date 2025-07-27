@@ -39,9 +39,9 @@ stop_threshold_(stop_threshold)
 {}
  
 PlannerOption()
-:max_iter_count_(50000),
-step_(12.0f),
-stop_threshold_(100.0f)
+:max_iter_count_(100000),
+step_(25.0f),
+stop_threshold_(300.0f)
 {}
 
 uint32_t get_max_iter_count(){ return max_iter_count_; }
@@ -352,6 +352,8 @@ break;
 }
 }
 }
+
+std::cout<<iter_count<<std::endl;
 
 if(successful)
    break;

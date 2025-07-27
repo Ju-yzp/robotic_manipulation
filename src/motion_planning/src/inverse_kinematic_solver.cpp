@@ -1,9 +1,11 @@
+// 
 #include <array>
 #include <cmath>
-#include <iostream>
 
+// 运动规划
 #include <motion_planning/inverse_kinematic_solver.hpp>
 
+// Eigen
 #include <Eigen/Dense>
 
 namespace motion_planning {
@@ -21,7 +23,14 @@ Solutions<UR5E_DOF> InverseKinematicSolver::inverseKinematic(Eigen::Matrix4f tar
 Solutions<UR5E_DOF> all_solutions;
 all_solutions.solutions_.reserve(8);
 
-Eigen::Matrix4f frame6_to_frame0 = target_pose;
+static Eigen::Matrix4f endeffector_to_frame6;
+
+endeffector_to_frame6 << 1.0f,0.0f,0.0f,0.0f,
+                         0.0f,1.0f,0.0f,0.0f,
+                         0.0f,0.0f,1.0f,100.0f,
+                         0.0f,0.0f,0.0f,1.0f;
+
+Eigen::Matrix4f frame6_to_frame0 = target_pose * endeffector_to_frame6.inverse();
 
 float theta1[2];
 
@@ -224,5 +233,21 @@ float theta3_2 = atan2(y2,x2) + beta + gama;
 // Case2:
 arm_solutions.push_back(std::array<float,3>{-beta-gama,theta3_2,total_theta+beta+gama-theta3_2});
 
+}
+
+// 输入末端执行器的位置速度，输出转换到关节下的速度
+Eigen::VectorXd InverseKinematicSolver::get_joint_velocity(Eigen::VectorXd end_effector_position_velocity)
+{
+Eigen::Vector<double,UR5E_DOF> joint_velocity;
+
+// 通过雅各比矩阵构建方程求关节速度
+Eigen::MatrixXd jocabian_matrix(3,6);
+jocabian_matrix<<0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,
+                 0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,
+                 0.0f,0.0f,0.0f,0.0f,0.0f,0.0f;
+
+joint_velocity = jocabian_matrix.colPivHouseholderQr().solve(end_effector_position_velocity);
+
+return joint_velocity;
 }
 }

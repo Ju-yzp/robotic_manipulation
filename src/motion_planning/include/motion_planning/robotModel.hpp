@@ -83,6 +83,12 @@ float get_theta(size_t index){ return theta_[index]; }
 
 WorkSpace get_workspace(){ return worksapce_; }
 
+void reset_status()
+{
+for(size_t index = 0; index < DOF; index++)
+    theta_[index] = 0.0f;
+}
+
 Eigen::Matrix4f get_endeffector_status()
 {
 Eigen::Matrix4f endeffector_pose = Eigen::Matrix4f::Identity();
@@ -91,6 +97,27 @@ for(size_t index = 0; index < DOF; index++)
     endeffector_pose = endeffector_pose *  frameTransform(a_[index],d_[index],alpha_[index], theta_[index]);
 }
 return endeffector_pose;
+}
+
+Eigen::Vector3f get(const std::size_t index)
+{
+Eigen::Matrix4f rotation = Eigen::Matrix4f::Identity();
+Eigen::Matrix4f position = Eigen::Matrix4f::Identity();
+
+// 求得坐标系从frame(0)到frame(index)的变换矩阵
+for(size_t i = 0;i < index ;i++)
+{
+rotation = rotation * frameTransform(a_[i],d_[i],alpha_[i], theta_[i]);
+}
+for(size_t i = index;i < DOF ;i++)
+{
+position = position * frameTransform(a_[i],d_[i],alpha_[i], theta_[i]);
+}
+
+Eigen::Vector3f pos,rot;
+pos<<position(0,3),position(1,3),position(2,3);
+rot<<rotation(0,2),rotation(1,2),rotation(2,2);
+return rot.cross(pos);
 }
 
 void selectSolutions(Solutions<DOF> &solutions,const Eigen::Matrix4f target_pose)
@@ -107,6 +134,7 @@ theta_[index] = solution[index];
 }
 // std::cout<<num++<<std::endl;
 Eigen::Matrix4f reach_pose = get_endeffector_status();
+
 // Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
 // std::cout << reach_pose.format(CleanFmt) << std::endl << std::endl;
 return !checkEndeffectorPose(target_pose,reach_pose);
@@ -130,7 +158,7 @@ for(size_t index{0}; index < DOF; index++)
 // 得到每一帧到基底坐标系的转换矩阵
 tranform_matrix = tranform_matrix * frameTransform(a_[index],d_[index],alpha_[index], theta_[index]);
 Eigen::Vector4f position;
-
+std::cout<<"Index "<<index<<std::endl;
 for(auto &envelope:envelopes_[index])
 {
 position<<envelope.x,envelope.y,envelope.z,1.0f;
@@ -139,7 +167,7 @@ envelope.transform_x = goal_pos(0);
 envelope.transform_y = goal_pos(1);
 envelope.transform_z = goal_pos(2);
 
-// std::cout<<goal_pos(0)<<" "<<goal_pos(1)<<" "<<goal_pos(2)<<std::endl;
+std::cout<<"x: "<<goal_pos(0)<<" y: "<<goal_pos(1)<<" z:"<<goal_pos(2)<<std::endl;
 // 遍历所有障碍物，看看是否发生碰撞
 for(const auto& obstacble_ptr:scence.get_obstacles())
 {
@@ -150,15 +178,16 @@ double center_dist = pow(ptr->x-envelope.transform_x,2)+
                      pow(ptr->z-envelope.transform_z,2);
 
 if(sqrt(center_dist) < ptr->radius + envelope.radius){
-    std::cout<<"Obstacle occur collision with envelope belongede to the "<<index<<" arm"<<std::endl;
-    flag = true;
+    std::cout<<"Obstacle occur collision with envelope belonged to the "<<index<<" arm"<<std::endl;
+    // flag = true;
+    return true;
 }
 }
 
 }
 }
 
-return flag;
+return false;
 }
 
 std::vector<SperhreEnvelope> get_envelope(size_t index)

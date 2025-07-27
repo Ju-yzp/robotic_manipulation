@@ -20,7 +20,7 @@ typedef std::array<float,UR5E_DOF> Ur5Param;
 
 // 以弧度制和mm作为基本单位
 Ur5Param a{0.0f,0.0f,425.0f,392.0f,0.0f,0.0f};
-Ur5Param d{163.0f,134.0f,0.0f,0.0f,-100.0f,0.0f};
+Ur5Param d{163.0f,134.0f,0.0f,0.0f,-100.0f,100.0f};
 Ur5Param alpha{0.0f,-M_PIf/2.0f,0.0f,0.0f,M_PIf/2.0f,-M_PIf/2.0f};
 Ur5Param theta{0.4f,2.0f,0.8f,1.0f,0.0f,1.0f};
 
@@ -43,14 +43,8 @@ target_pose << 1.0f,0.0f,0.0f,100.0f,
                0.0f,0.0f,1.0f,700.0f,
                0.0f,0.0f,0.0f,1.0f;
 
-Eigen::Matrix4f endeffector_to_frame6;
 
-endeffector_to_frame6 << 1.0f,0.0f,0.0f,0.0f,
-                         0.0f,1.0f,0.0f,0.0f,
-                         0.0f,0.0f,1.0f,100.0f,
-                         0.0f,0.0f,0.0f,1.0f;
-
-target_pose = target_pose * endeffector_to_frame6.inverse();           
+//target_pose = target_pose * endeffector_to_frame6.inverse();           
 // Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
 // std::cout << target_pose.format(CleanFmt) << std::endl << std::endl;
 Solutions<UR5E_DOF> solutions = inverse_kinematic_solver->inverseKinematic(target_pose);

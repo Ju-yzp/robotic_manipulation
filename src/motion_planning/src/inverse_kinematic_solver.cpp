@@ -235,19 +235,108 @@ arm_solutions.push_back(std::array<float,3>{-beta-gama,theta3_2,total_theta+beta
 
 }
 
-// 输入末端执行器的位置速度，输出转换到关节下的速度
-Eigen::VectorXd InverseKinematicSolver::get_joint_velocity(Eigen::VectorXd end_effector_position_velocity)
+/* 输入末端执行器的位置速度，输出转换到关节下的速度
+* TODO:问题是一个3x6的矩阵方程求解，最少应该有6个非线性方程才能组成一个6维空间的基,
+*      在UR5E机械臂中，对于xoy平面没有作用的只有腕部关节3,那么还有五个关节对于机械
+*      臂在xoy平面的移动有作用，
+*/ 
+
+Eigen::VectorXf InverseKinematicSolver::get_joint_velocity(Eigen::VectorXf end_effector_position_velocity)
 {
-Eigen::Vector<double,UR5E_DOF> joint_velocity;
+    Eigen::Vector<float, UR5E_DOF> joint_velocity;
+    Eigen::Vector<float,3> joint_velocity_1;
 
-// 通过雅各比矩阵构建方程求关节速度
-Eigen::MatrixXd jocabian_matrix(3,6);
-jocabian_matrix<<0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,
-                 0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,
-                 0.0f,0.0f,0.0f,0.0f,0.0f,0.0f;
+    bool is_solution_valid = false;
+    
+    static Eigen::Vector<float, UR5E_DOF> last_valid_velocity_;
+    // 通过雅各比矩阵构建方程求关节速度
+    Eigen::MatrixXf jacobian_matrix(3, 3); // 3x6矩阵，假设只考虑位置速度
+    jacobian_matrix.col(0) = robot_model_->get(1);
+    jacobian_matrix.col(1) = robot_model_->get(2);
+    jacobian_matrix.col(2) = robot_model_->get(3);
 
-joint_velocity = jocabian_matrix.colPivHouseholderQr().solve(end_effector_position_velocity);
+    if(abs(jacobian_matrix.determinant()) > 1e-10 ){
+    joint_velocity_1 = jacobian_matrix.inverse() * end_effector_position_velocity;
+    joint_velocity(0) = joint_velocity_1(0);
+    joint_velocity(1) = joint_velocity_1(1);
+    joint_velocity(2) = joint_velocity_1(2);
+    joint_velocity(3) = 0.0f;
+    joint_velocity(4) = 0.0f;
+    joint_velocity(5) = 0.0f; }
+    else 
+    {
+    joint_velocity(0) = 0.08f;
+    joint_velocity(1) = 0.08f;
+    joint_velocity(2) = 0.0f;
+    joint_velocity(3) = 0.0f;
+    joint_velocity(4) = 0.0f;
+    joint_velocity(5) = 0.0f;
+    }
 
-return joint_velocity;
+    // jacobian_matrix.col(3) = robot_model_->get(4);
+    // jacobian_matrix.col(4) = robot_model_->get(5);
+    // jacobian_matrix.col(5) = robot_model_->get(6);
+    
+    // // 设置条件数阈值和残差阈值
+    // const float CONDITION_NUMBER_THRESHOLD = 1000.0f;
+    // const float RESIDUAL_THRESHOLD = 1e-4f;
+    
+    // // 计算矩阵的条件数（使用奇异值分解）
+    // Eigen::JacobiSVD<Eigen::MatrixXf> svd(jacobian_matrix, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    // Eigen::VectorXf singular_values = svd.singularValues();
+    
+    // // 检查是否存在接近零的奇异值
+    // bool is_singular = false;
+    // for (int i = 0; i < singular_values.size(); ++i) {
+    //     if (std::abs(singular_values(i)) < 1e-9f) {
+    //         is_singular = true;
+    //         break;
+    //     }
+    // }
+    
+    // // 计算条件数（最大奇异值除以最小奇异值）
+    // float condition_number = singular_values(0) / singular_values(singular_values.size() - 1);
+    
+    // // 使用QR分解求解
+    // Eigen::ColPivHouseholderQR<Eigen::MatrixXf> qr(jacobian_matrix);
+    
+    // // 检查矩阵是否满秩
+    // bool is_full_rank = qr.rank() == std::min(jacobian_matrix.rows(), jacobian_matrix.cols());
+    
+    // // 只有在矩阵非奇异、条件数良好且满秩时才进行求解
+    // if (!is_singular && condition_number < CONDITION_NUMBER_THRESHOLD && is_full_rank) {
+    //     joint_velocity = qr.solve(end_effector_position_velocity);
+        
+    //     // 验证解的残差
+    //     float residual = (jacobian_matrix * joint_velocity - end_effector_position_velocity).norm();
+        
+    //     if (residual < RESIDUAL_THRESHOLD) {
+    //         is_solution_valid = true;
+    //     } else {
+    //         is_solution_valid = false;
+    //     }
+    // } else {
+    //     // 矩阵条件不好，寻找最小二乘解
+    //     joint_velocity = svd.solve(end_effector_position_velocity);
+        
+    //     // 验证最小二乘解的残差
+    //     float residual = (jacobian_matrix * joint_velocity - end_effector_position_velocity).norm();
+        
+    //     if (residual < RESIDUAL_THRESHOLD) {
+    //         is_solution_valid = true;
+    //     } else {
+    //         is_solution_valid = false;
+    //     }
+    // }
+    
+    // // 如果解无效，可以选择返回零速度或上一次有效解
+    // if (!is_solution_valid) {
+    //     joint_velocity = last_valid_velocity_;
+    // } else {
+    //     // 保存当前有效解
+    //     last_valid_velocity_ = joint_velocity;
+    // }
+    
+    return joint_velocity;
 }
 }

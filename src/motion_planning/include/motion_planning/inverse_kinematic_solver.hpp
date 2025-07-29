@@ -24,7 +24,7 @@ InverseKinematicSolver(std::shared_ptr<RobotModel<UR5E_DOF>> &robot_model);
 
 Solutions<UR5E_DOF> inverseKinematic(Eigen::Matrix4f target_pose) override;
 
-Eigen::VectorXd get_joint_velocity(Eigen::VectorXd end_effector_position_velocity) override;
+Eigen::VectorXf get_joint_velocity(Eigen::VectorXf end_effector_position_velocity) override;
 
 private:
 

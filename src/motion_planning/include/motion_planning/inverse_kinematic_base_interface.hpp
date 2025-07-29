@@ -21,7 +21,7 @@ virtual ~InverseKinematicBaseInterface(){}
 virtual Solutions<DOF> inverseKinematic(Eigen::Matrix4f target_pose) = 0;
 
 // 
-virtual Eigen::VectorXd get_joint_velocity(Eigen::VectorXd end_effector_position_velocity) = 0;
+virtual Eigen::VectorXf get_joint_velocity(Eigen::VectorXf end_effector_position_velocity) = 0;
 };
 }
 

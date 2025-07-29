@@ -312,7 +312,7 @@
      <ros2_control name="ur5e" type="system">
 
       <hardware>
-        <plugin>ur5e/RobotSystem</plugin>
+        <plugin>ros2_control_ur5e_test/UR5ESystem</plugin>
       </hardware>
 
       <joint name="shoulder_pan_joint">

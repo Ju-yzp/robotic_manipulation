@@ -1,9 +1,11 @@
 #include <memory>
 #include <array>
 
+// cpp
 #include <iostream>
 #include <cmath>
 
+// motion_planning
 #include <motion_planning/mujoco_window.hpp>
 #include <motion_planning/inverse_kinematic_solver.hpp>
 #include <motion_planning/robotModel.hpp>
@@ -53,7 +55,6 @@ std::cout << pose1.format(CleanFmt) << std::endl << std::endl;
 
 robot_model->reset_status();
 Eigen::Vector3f r2 = robot_model->get(2);
-
 std::cout << "----Reducition By Changed Joint2----" << std::endl << std::endl;
 r2(0) = r2(0) * 0.08f;
 r2(1) = r2(1) * 0.08f;
@@ -67,7 +68,6 @@ std::cout << pose2.format(CleanFmt) << std::endl << std::endl;
 
 robot_model->reset_status();
 Eigen::Vector3f r3 = robot_model->get(3);
-
 std::cout << "----Reducition By Changed Joint3----" << std::endl << std::endl;
 r3(0) = r3(0) * 0.08f;
 r3(1) = r3(1) * 0.08f;
@@ -78,5 +78,18 @@ std::cout << "----Only Change Joint3----" << std::endl << std::endl;
 robot_model->set_theta(0.08f, 2);
 Eigen::Matrix4f pose3 = robot_model->get_endeffector_status();
 std::cout << pose3.format(CleanFmt) << std::endl << std::endl;
+
+robot_model->reset_status();
+Eigen::Vector3f r6 = robot_model->get(6);
+std::cout << "----Reducition By Changed Joint6----" << std::endl << std::endl;
+r6(0) = r6(0) * 0.08f;
+r6(1) = r6(1) * 0.08f;
+r6(2) = r6(2) * 0.08f;
+std::cout << r6.format(CleanFmt) << std::endl << std::endl;
+
+std::cout << "----Only Change Joint6----" << std::endl << std::endl;
+robot_model->set_theta(0.08f, 5);
+Eigen::Matrix4f pose6 = robot_model->get_endeffector_status();
+std::cout << pose6.format(CleanFmt) << std::endl << std::endl;
 return 0;
 }

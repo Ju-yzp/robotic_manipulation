@@ -62,13 +62,13 @@ def generate_launch_description():
             value_type=str
         )
     }
-    
+        
     # 节点配置
     joint_state_publisher_node = Node(
         package="joint_state_publisher_gui",
         executable="joint_state_publisher_gui",
     )
-    
+
     robot_state_publisher_node = Node(
         package="robot_state_publisher",
         executable="robot_state_publisher",

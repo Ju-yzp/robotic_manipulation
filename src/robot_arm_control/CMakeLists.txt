@@ -121,11 +121,11 @@ foreach(Dependency IN ITEMS ${CONTROLLER_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
-## 编译库
 add_library(
   ${PROJECT_NAME}
   SHARED
   src/robot_arm_hardware.cpp
+  src/robot_arm_ur5e_controller.cpp
 )
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
@@ -133,7 +133,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
 )
 
-# 使用 target_link_libraries 替代 ament_target_dependencies
  ament_target_dependencies(${PROJECT_NAME}
   PUBLIC
   motion_planning
@@ -143,6 +142,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 # 导出硬件插件
 pluginlib_export_plugin_description_file(hardware_interface ros2_control_ur5e_test.xml)
+# Export controller plugins
+pluginlib_export_plugin_description_file(controller_interface ros2_control_ur5e_test.xml)
 
 ## 编译可执行文件
 add_executable(send_trajectory src/send_trajectory.cpp)
@@ -161,4 +162,8 @@ install(TARGETS ${PROJECT_NAME}
 install(TARGETS send_trajectory
   DESTINATION lib/${PROJECT_NAME})
 
+install(
+  DIRECTORY launch config
+  DESTINATION share/${PROJECT_NAME}
+)
 ament_package()

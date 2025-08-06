@@ -15,8 +15,8 @@ virtual bool isCollision() = 0;
 
 struct SphereObstacle:public Obstacble
 {
-double x,y,z;
-double radius;
+float x,y,z;
+float radius;
 bool isCollision()override
 {
 return true;

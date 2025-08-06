@@ -1,3 +1,4 @@
+#include <chrono>
 #include <cstddef>
 #include <memory>
 
@@ -7,6 +8,7 @@
 #include <motion_planning/robotModel.hpp>
 #include <motion_planning/mujoco_window.hpp>
 #include <motion_planning/RRTPlanner.hpp>
+#include <thread>
 
 int main()
 {
@@ -133,7 +135,7 @@ robot_model->set_theta(0.2f,3);
 robot_model->set_theta(0.2f,4);
 robot_model->set_theta(1.0f,5);
 
-//测试检测碰撞模块
+// //测试检测碰撞模块
 if(robot_model->isOccurCollision(scence))
    std::cout<<"Occur collision between obstacles with robot arm"<<std::endl;
 
@@ -148,30 +150,21 @@ target_pose << 1.0f,0.0f,0.0f,100.0f,
                0.0f,0.0f,0.0f,1.0f;
 
 
-Eigen::Matrix4f endeffector_to_frame6;
-
-endeffector_to_frame6 << 1.0f,0.0f,0.0f,0.0f,
-                         0.0f,1.0f,0.0f,0.0f,
-                         0.0f,0.0f,1.0f,100.0f,
-                         0.0f,0.0f,0.0f,1.0f;
-
-target_pose = target_pose * endeffector_to_frame6.inverse(); 
-
 Eigen::Matrix4f source_pose;
 source_pose = robot_model->get_endeffector_status();
-
-Eigen::Matrix4f p = source_pose  * endeffector_to_frame6;
-Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
-std::cout << source_pose.format(CleanFmt) << std::endl << std::endl;
 
 auto solutions = inverse_kinematic_solver->inverseKinematic(target_pose);
 
 // 路径规划
+auto start = chrono::system_clock::now();
 Trajectory<UR5E_DOF> tarjectoies = rrt_planner->plan(scence,target_pose,source_pose);
+auto end = chrono::system_clock::now();
+auto time_diff = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
+
 if(tarjectoies.plan_tarjectory.empty())
    std::cout<<"Failed to serach for a safety path from source pose to target pose"<<std::endl;
-else 
-   std::cout<<"Succefull to serach for a safety path from source pose to target pose"<<std::endl;
+else
+  std::cout<<"Totally spent "<<time_diff<<" ms to search a safety path that reach traget pose without collision"<<std::endl;
 
 // 加载模型资源
 char error_msg[1000] = "Could not load binary model !";
@@ -205,7 +198,7 @@ mjr_defaultContext(&mujoco_resource::con);
 
 mjv_makeScene(mujoco_resource::model,&mujoco_resource::scn,2000);
 mjr_makeContext(mujoco_resource::model,&mujoco_resource::con,mjFONTSCALE_150);
-std::cout<<"wow"<<std::endl;
+
 mjtNum pos;// 记录关节角度用于更新运动学模型
 
 mujoco_resource::data->qpos[0] = 1.0f;
@@ -214,25 +207,6 @@ mujoco_resource::data->qpos[2] = -1.2f;
 mujoco_resource::data->qpos[3] = 0.2f;
 mujoco_resource::data->qpos[4] = -0.2f;
 mujoco_resource::data->qpos[5] = 1.0f;
-// if(!solutions.solutions_.empty())
-// {
-//     mujoco_resource::data->qpos[0] = solutions.solutions_[0][0];
-//     mujoco_resource::data->qpos[1] = solutions.solutions_[0][1];
-//     mujoco_resource::data->qpos[2] = solutions.solutions_[0][2];
-//     mujoco_resource::data->qpos[3] = solutions.solutions_[0][3];
-//     mujoco_resource::data->qpos[4] = -solutions.solutions_[0][4];
-//     mujoco_resource::data->qpos[5] = solutions.solutions_[0][5];
-//     std::cout<<"assign the first solution default solution"<<std::endl;
-// }
-// else 
-//     std::cout<<"Failed to find a vaild solution that make robot arm reach the target pose"<<std::endl;
-
-// mujoco_resource::data->qpos[0] = 1.0f;
-// mujoco_resource::data->qpos[1] = -0.7f;
-// mujoco_resource::data->qpos[2] = -1.2f;
-// mujoco_resource::data->qpos[3] = 0.2f;
-// mujoco_resource::data->qpos[4] = -0.2f;
-// mujoco_resource::data->qpos[5] = 1.0f;
 
 while (!glfwWindowShouldClose(window)) {
     for(auto solution:tarjectoies.plan_tarjectory)
@@ -254,6 +228,7 @@ while (!glfwWindowShouldClose(window)) {
      mjr_render(viewport, &mujoco_resource::scn, &mujoco_resource::con);
     glfwSwapBuffers(window);
     glfwPollEvents();
+    std::this_thread::sleep_for(chrono::milliseconds(60));
     }
 }
 mjv_freeScene(&mujoco_resource::scn);

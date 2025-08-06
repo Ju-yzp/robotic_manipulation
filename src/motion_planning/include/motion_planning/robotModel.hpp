@@ -49,8 +49,10 @@ RobotModel(std::array<float,DOF> a,std::array<float,DOF> d,
            JointLimit<DOF> joint_limit)
 :a_(a),d_(d),alpha_(alpha),theta_(theta),joint_limit_(joint_limit)
 {
-for(size_t index{0};index < DOF;index++)
+for(size_t index{0};index < DOF;index++){
     envelopes_[index] = std::vector<SperhreEnvelope>();
+}
+
 }
 
 RobotModel(std::array<float,DOF> a,std::array<float,DOF> d,
@@ -71,6 +73,31 @@ void set_theta(float value,std::size_t index)
 void add_envelope(SperhreEnvelope& envelope,std::size_t index) 
 {
 envelopes_[index].push_back(envelope);
+
+if(envelope_position_.find(index) == envelope_position_.end())
+{
+    Eigen::MatrixXf pos(4,1);
+    pos<<envelope.x,envelope.y,envelope.z,1.0f;
+    envelope_position_[index] = pos;
+} else {
+size_t last_cols = envelope_position_[index].cols();
+envelope_position_[index].conservativeResize(Eigen::NoChange,last_cols+1);
+Eigen::Vector4f pos;
+pos<<envelope.x,envelope.y,envelope.z,1.0f;
+envelope_position_[index].col(last_cols) = pos;
+}
+
+if(envelope_radius_.find(index) == envelope_radius_.end())
+{
+    Eigen::VectorXf r(1);
+    r<<envelope.radius;
+    envelope_radius_[index] = r;
+} else {
+size_t last_rows = envelope_radius_[index].size();
+envelope_radius_[index].conservativeResize(last_rows+1);
+envelope_radius_[index][last_rows] = envelope.radius;
+}
+
 }
 
 float get_a(size_t index){ return a_[index]; }
@@ -109,11 +136,8 @@ for(size_t i = 0;i < index ;i++)
 {
 rotation = rotation * frameTransform(a_[i],d_[i],alpha_[i], theta_[i]);
 }
-for(size_t i = index;i < DOF ;i++)
-{
-position = position * frameTransform(a_[i],d_[i],alpha_[i], theta_[i]);
-}
 
+position = get_endeffector_status() - rotation;
 Eigen::Vector3f pos,rot;
 pos<<position(0,3),position(1,3),position(2,3);
 rot<<rotation(0,2),rotation(1,2),rotation(2,2);
@@ -132,11 +156,8 @@ for(size_t index = 0; index < DOF; index++)
 {
 theta_[index] = solution[index];
 }
-// std::cout<<num++<<std::endl;
 Eigen::Matrix4f reach_pose = get_endeffector_status();
 
-// Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
-// std::cout << reach_pose.format(CleanFmt) << std::endl << std::endl;
 return !checkEndeffectorPose(target_pose,reach_pose);
 }),solutions.solutions_.end());
 
@@ -152,22 +173,51 @@ if( scence.get_obstacles().size() == 0)
    return false;
 
 bool flag{false};
+
+// 得到每个包络体在机械臂基底坐标系下的坐标
+// for(size_t index{0}; index < DOF; index++)
+// {
+// // 得到每一帧到基底坐标系的转换矩阵
+// tranform_matrix = tranform_matrix * frameTransform(a_[index],d_[index],alpha_[index], theta_[index]);
+
+// if(envelope_position_.find(index) == envelope_position_.end())
+//   continue;
+// else{
+//     Eigen::MatrixXf new_pos = tranform_matrix * envelope_position_[index];
+//     Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+//     for(auto obstacble_ptr:scence.get_obstacles())
+//     {
+//     std::shared_ptr<SphereObstacle> ptr = std::static_pointer_cast<SphereObstacle>(obstacble_ptr);
+//     Eigen::Vector4f obstacble_pos;
+//     obstacble_pos<<ptr->x,ptr->y,ptr->z,1.0f;
+//     Eigen::MatrixXf diff = new_pos.array() - obstacble_pos.array().replicate(1,new_pos.cols());
+//     Eigen::VectorXf is_collision = (diff.colwise().norm().transpose().array() < (envelope_radius_[index].array() + ptr->radius)).cast<float>();
+//     if(is_collision.any())
+//        return true;
+//     }
+//     }
+     
+// }
+
+Eigen::MatrixXf tranform_matrix_ = Eigen::Matrix4f::Identity();
 // 得到每个包络体在机械臂基底坐标系下的坐标
 for(size_t index{0}; index < DOF; index++)
 {
 // 得到每一帧到基底坐标系的转换矩阵
-tranform_matrix = tranform_matrix * frameTransform(a_[index],d_[index],alpha_[index], theta_[index]);
+tranform_matrix_ = tranform_matrix_ * frameTransform(a_[index],d_[index],alpha_[index], theta_[index]);
 Eigen::Vector4f position;
-std::cout<<"Index "<<index<<std::endl;
+// std::cout<<"Index "<<index<<std::endl;
 for(auto &envelope:envelopes_[index])
 {
 position<<envelope.x,envelope.y,envelope.z,1.0f;
-Eigen::Vector4f goal_pos = tranform_matrix * position;
+Eigen::Vector4f goal_pos = tranform_matrix_ * position;
 envelope.transform_x = goal_pos(0);
 envelope.transform_y = goal_pos(1);
 envelope.transform_z = goal_pos(2);
 
-std::cout<<"x: "<<goal_pos(0)<<" y: "<<goal_pos(1)<<" z:"<<goal_pos(2)<<std::endl;
+// std::cout<<"new postion: x"<<goal_pos(0)<<" y "<<goal_pos(1)<<" z "<<goal_pos(2)<<std::endl;
+
+// std::cout<<"x: "<<goal_pos(0)<<" y: "<<goal_pos(1)<<" z:"<<goal_pos(2)<<std::endl;
 // 遍历所有障碍物，看看是否发生碰撞
 for(const auto& obstacble_ptr:scence.get_obstacles())
 {
@@ -178,7 +228,7 @@ double center_dist = pow(ptr->x-envelope.transform_x,2)+
                      pow(ptr->z-envelope.transform_z,2);
 
 if(sqrt(center_dist) < ptr->radius + envelope.radius){
-    std::cout<<"Obstacle occur collision with envelope belonged to the "<<index<<" arm"<<std::endl;
+    // std::cout<<"Obstacle occur collision with envelope belonged to the "<<index<<" arm"<<std::endl;
     // flag = true;
     return true;
 }
@@ -208,6 +258,12 @@ std::array<float,DOF> theta_;
 
 // 球形包络体集
 std::map<std::size_t,std::vector<SperhreEnvelope>> envelopes_;
+
+// 机械臂包络体的半径
+std::map<size_t,Eigen::MatrixXf> envelope_position_;
+
+// 机械臂包络体在帧中的位置
+std::map<size_t,Eigen::VectorXf> envelope_radius_;
 
 // 机械臂工作空间
 WorkSpace worksapce_;

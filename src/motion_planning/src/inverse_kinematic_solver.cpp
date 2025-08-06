@@ -242,101 +242,54 @@ arm_solutions.push_back(std::array<float,3>{-beta-gama,theta3_2,total_theta+beta
 */ 
 
 Eigen::VectorXf InverseKinematicSolver::get_joint_velocity(Eigen::VectorXf end_effector_position_velocity)
-{
-    Eigen::Vector<float, UR5E_DOF> joint_velocity;
-    Eigen::Vector<float,3> joint_velocity_1;
-
-    bool is_solution_valid = false;
-    
+{    
     static Eigen::Vector<float, UR5E_DOF> last_valid_velocity_;
     // 通过雅各比矩阵构建方程求关节速度
-    Eigen::MatrixXf jacobian_matrix(3, 3); // 3x6矩阵，假设只考虑位置速度
+    Eigen::MatrixXf jacobian_matrix(3, 6); // 3x6矩阵（3个位置自由度，6个关节）
     jacobian_matrix.col(0) = robot_model_->get(1);
     jacobian_matrix.col(1) = robot_model_->get(2);
     jacobian_matrix.col(2) = robot_model_->get(3);
+    jacobian_matrix.col(3) = robot_model_->get(4);
+    jacobian_matrix.col(4) = robot_model_->get(5);
+    jacobian_matrix.col(5) = robot_model_->get(6);
 
-    if(abs(jacobian_matrix.determinant()) > 1e-10 ){
-    joint_velocity_1 = jacobian_matrix.inverse() * end_effector_position_velocity;
-    joint_velocity(0) = joint_velocity_1(0);
-    joint_velocity(1) = joint_velocity_1(1);
-    joint_velocity(2) = joint_velocity_1(2);
-    joint_velocity(3) = 0.0f;
-    joint_velocity(4) = 0.0f;
-    joint_velocity(5) = 0.0f; }
-    else 
-    {
-    joint_velocity(0) = 0.08f;
-    joint_velocity(1) = 0.08f;
-    joint_velocity(2) = 0.0f;
-    joint_velocity(3) = 0.0f;
-    joint_velocity(4) = 0.0f;
-    joint_velocity(5) = 0.0f;
+    // 检查末端速度维度是否正确（应为3x1）
+    if (end_effector_position_velocity.rows() != 3) {
+        throw std::runtime_error("末端速度维度错误，应为3x1列向量！");
     }
 
-    // jacobian_matrix.col(3) = robot_model_->get(4);
-    // jacobian_matrix.col(4) = robot_model_->get(5);
-    // jacobian_matrix.col(5) = robot_model_->get(6);
-    
-    // // 设置条件数阈值和残差阈值
-    // const float CONDITION_NUMBER_THRESHOLD = 1000.0f;
-    // const float RESIDUAL_THRESHOLD = 1e-4f;
-    
-    // // 计算矩阵的条件数（使用奇异值分解）
-    // Eigen::JacobiSVD<Eigen::MatrixXf> svd(jacobian_matrix, Eigen::ComputeFullU | Eigen::ComputeFullV);
-    // Eigen::VectorXf singular_values = svd.singularValues();
-    
-    // // 检查是否存在接近零的奇异值
-    // bool is_singular = false;
-    // for (int i = 0; i < singular_values.size(); ++i) {
-    //     if (std::abs(singular_values(i)) < 1e-9f) {
-    //         is_singular = true;
-    //         break;
-    //     }
-    // }
-    
-    // // 计算条件数（最大奇异值除以最小奇异值）
-    // float condition_number = singular_values(0) / singular_values(singular_values.size() - 1);
-    
-    // // 使用QR分解求解
-    // Eigen::ColPivHouseholderQR<Eigen::MatrixXf> qr(jacobian_matrix);
-    
-    // // 检查矩阵是否满秩
-    // bool is_full_rank = qr.rank() == std::min(jacobian_matrix.rows(), jacobian_matrix.cols());
-    
-    // // 只有在矩阵非奇异、条件数良好且满秩时才进行求解
-    // if (!is_singular && condition_number < CONDITION_NUMBER_THRESHOLD && is_full_rank) {
-    //     joint_velocity = qr.solve(end_effector_position_velocity);
-        
-    //     // 验证解的残差
-    //     float residual = (jacobian_matrix * joint_velocity - end_effector_position_velocity).norm();
-        
-    //     if (residual < RESIDUAL_THRESHOLD) {
-    //         is_solution_valid = true;
-    //     } else {
-    //         is_solution_valid = false;
-    //     }
-    // } else {
-    //     // 矩阵条件不好，寻找最小二乘解
-    //     joint_velocity = svd.solve(end_effector_position_velocity);
-        
-    //     // 验证最小二乘解的残差
-    //     float residual = (jacobian_matrix * joint_velocity - end_effector_position_velocity).norm();
-        
-    //     if (residual < RESIDUAL_THRESHOLD) {
-    //         is_solution_valid = true;
-    //     } else {
-    //         is_solution_valid = false;
-    //     }
-    // }
-    
-    // // 如果解无效，可以选择返回零速度或上一次有效解
-    // if (!is_solution_valid) {
-    //     joint_velocity = last_valid_velocity_;
-    // } else {
-    //     // 保存当前有效解
-    //     last_valid_velocity_ = joint_velocity;
-    // }
-    
-    return joint_velocity;
+    // SVD分解：计算完整的U和V
+    Eigen::JacobiSVD<Eigen::MatrixXf> svd(
+        jacobian_matrix, 
+        Eigen::ComputeFullU | Eigen::ComputeFullV
+    );
+
+    // 1. 构造奇异值伪逆矩阵（Sigma^+）并适配维度
+    int m = jacobian_matrix.rows(); // m=3（位置自由度）
+    int n = jacobian_matrix.cols(); // n=6（关节数）
+    Eigen::MatrixXf sigma_plus = Eigen::MatrixXf::Zero(n, m); // 初始化为6x3的零矩阵
+    Eigen::VectorXf singular_values = svd.singularValues();
+
+    // 填充奇异值的倒数（添加阻尼项提高稳定性，避免除以零）
+    float damping = 0.01f; // 阻尼系数，可根据需要调整
+    for (int i = 0; i < singular_values.size(); ++i) {
+        // 阻尼伪逆公式：sigma_plus[i] = sigma[i] / (sigma[i]^2 + damping^2)
+        sigma_plus(i, i) = singular_values(i) / (singular_values(i) * singular_values(i) + damping * damping);
+    }
+
+    // 2. 计算伪逆 J^+ = V * Sigma^+ * U^T
+    // V是6x6，Sigma^+是6x3，U^T是3x3 → J^+最终是6x3（正确维度）
+    Eigen::MatrixXf J_plus = svd.matrixV() * sigma_plus * svd.matrixU().transpose();
+
+    // 3. 计算关节速度（6x1）：J^+ (6x3) * 末端速度 (3x1) → 6x1
+    Eigen::VectorXf joint_vel = J_plus * end_effector_position_velocity;
+
+    // 确保关节速度维度正确（6个关节）
+    if (joint_vel.rows() != 6) {
+        throw std::runtime_error("关节速度维度错误，应为6x1列向量！");
+    }
+
+    return joint_vel;
 }
+    
 }

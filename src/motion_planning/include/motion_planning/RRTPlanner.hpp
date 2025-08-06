@@ -41,7 +41,7 @@ stop_threshold_(stop_threshold)
 PlannerOption()
 :max_iter_count_(100000),
 step_(25.0f),
-stop_threshold_(300.0f)
+stop_threshold_(100.0f)
 {}
 
 uint32_t get_max_iter_count(){ return max_iter_count_; }
@@ -89,12 +89,12 @@ Trajectory<DOF> plan(const Scence &scence,const Eigen::Matrix4f target_pose,cons
 Trajectory<DOF> trajectory;
 
 bool maybe_succefull{false};
-std::cout<<"----Source Pose"<<std::endl;
-Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
-std::cout << source_pose.format(CleanFmt) << std::endl << std::endl;
+// std::cout<<"----Source Pose"<<std::endl;
+// Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+// std::cout << source_pose.format(CleanFmt) << std::endl << std::endl;
 
-std::cout<<"----Target Pose"<<std::endl;
-std::cout << target_pose.format(CleanFmt) << std::endl << std::endl;
+// std::cout<<"----Target Pose"<<std::endl;
+// std::cout << target_pose.format(CleanFmt) << std::endl << std::endl;
 
 // 先看看能不能到达目标位姿
 Solutions<DOF> solutions = inverse_kinematic_solver_->inverseKinematic(target_pose);
@@ -103,7 +103,7 @@ for(auto& solution:solutions.solutions_)
 if(!detectCollision(scence,solution))
 {
 maybe_succefull = true;
-std::cout<<"Exist solution that make arm reach specficied pose and not collidate with obstacle "<<std::endl;
+// std::cout<<"Exist solution that make arm reach specficied pose and not collidate with obstacle "<<std::endl;
 break;
 }
 }
@@ -134,7 +134,7 @@ trajectory.plan_tarjectory.push_back((*iter)->correct_solution);
 }
 }
 
-std::cout<<(int)trajectory.plan_tarjectory.size()<<std::endl;
+// std::cout<<(int)trajectory.plan_tarjectory.size()<<std::endl;
 // 释放内存
 releaseResource();
 
@@ -314,7 +314,6 @@ nearest_node->correct_solution = solution;
 return true;
 }
 
-
 return false;
 }
 
@@ -353,7 +352,7 @@ break;
 }
 }
 
-std::cout<<iter_count<<std::endl;
+// std::cout<<iter_count<<std::endl;
 
 if(successful)
    break;
@@ -381,7 +380,7 @@ if(!successful)
 RRTNode *end_node = tree_[tree_.size()-1];
 while(end_node->parent_node && (end_node != root_node ))
 {
-std::cout<<end_node->pose(0,3)<<" "<<end_node->pose(1,3)<<" "<<end_node->pose(2,3)<<std::endl;
+// std::cout<<end_node->pose(0,3)<<" "<<end_node->pose(1,3)<<" "<<end_node->pose(2,3)<<std::endl;
 path.push_back(end_node);
 end_node = end_node->parent_node;
 }

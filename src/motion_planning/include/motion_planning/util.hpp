@@ -43,6 +43,29 @@ std::array<float,DOF> lower_; // 下限
 Eigen::Matrix4f frameTransform(float a,float d,float alpha,float theta);
 
 bool checkEndeffectorPose(const Eigen::Matrix4f target_pose,const Eigen::Matrix4f reach_pose);
+
+class SVDSolver
+{
+public:
+SVDSolver() = default;
+~SVDSolver() = default;
+// 分解一般矩阵的奇异值
+void solve(Eigen::MatrixXd A,Eigen::VectorXd B);
+private:
+// 避免接近的数相互地抵消，使得结果为0
+double sign(double a, double b)
+{
+return a>=0 ? a+b : a-b;
+}
+Eigen::MatrixXd U_;
+Eigen::MatrixXd S_;
+Eigen::MatrixXd V_;
+
+double error_ = 0.0001;
+
+};
+
+int vectiToJoint(Eigen::MatrixXd A,Eigen::VectorXd B,Eigen::VectorXd X);
 }
 
 #endif

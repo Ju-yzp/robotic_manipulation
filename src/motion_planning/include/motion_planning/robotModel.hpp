@@ -175,67 +175,67 @@ if( scence.get_obstacles().size() == 0)
 bool flag{false};
 
 // 得到每个包络体在机械臂基底坐标系下的坐标
-// for(size_t index{0}; index < DOF; index++)
-// {
-// // 得到每一帧到基底坐标系的转换矩阵
-// tranform_matrix = tranform_matrix * frameTransform(a_[index],d_[index],alpha_[index], theta_[index]);
-
-// if(envelope_position_.find(index) == envelope_position_.end())
-//   continue;
-// else{
-//     Eigen::MatrixXf new_pos = tranform_matrix * envelope_position_[index];
-//     Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
-//     for(auto obstacble_ptr:scence.get_obstacles())
-//     {
-//     std::shared_ptr<SphereObstacle> ptr = std::static_pointer_cast<SphereObstacle>(obstacble_ptr);
-//     Eigen::Vector4f obstacble_pos;
-//     obstacble_pos<<ptr->x,ptr->y,ptr->z,1.0f;
-//     Eigen::MatrixXf diff = new_pos.array() - obstacble_pos.array().replicate(1,new_pos.cols());
-//     Eigen::VectorXf is_collision = (diff.colwise().norm().transpose().array() < (envelope_radius_[index].array() + ptr->radius)).cast<float>();
-//     if(is_collision.any())
-//        return true;
-//     }
-//     }
-     
-// }
-
-Eigen::MatrixXf tranform_matrix_ = Eigen::Matrix4f::Identity();
-// 得到每个包络体在机械臂基底坐标系下的坐标
 for(size_t index{0}; index < DOF; index++)
 {
 // 得到每一帧到基底坐标系的转换矩阵
-tranform_matrix_ = tranform_matrix_ * frameTransform(a_[index],d_[index],alpha_[index], theta_[index]);
-Eigen::Vector4f position;
-// std::cout<<"Index "<<index<<std::endl;
-for(auto &envelope:envelopes_[index])
-{
-position<<envelope.x,envelope.y,envelope.z,1.0f;
-Eigen::Vector4f goal_pos = tranform_matrix_ * position;
-envelope.transform_x = goal_pos(0);
-envelope.transform_y = goal_pos(1);
-envelope.transform_z = goal_pos(2);
+tranform_matrix = tranform_matrix * frameTransform(a_[index],d_[index],alpha_[index], theta_[index]);
 
-// std::cout<<"new postion: x"<<goal_pos(0)<<" y "<<goal_pos(1)<<" z "<<goal_pos(2)<<std::endl;
-
-// std::cout<<"x: "<<goal_pos(0)<<" y: "<<goal_pos(1)<<" z:"<<goal_pos(2)<<std::endl;
-// 遍历所有障碍物，看看是否发生碰撞
-for(const auto& obstacble_ptr:scence.get_obstacles())
-{
-// TODO：目前是使用球形障碍物进行算法测试，后面将会使用八叉树表达障碍物的存在
-std::shared_ptr<SphereObstacle> ptr = std::dynamic_pointer_cast<SphereObstacle>(obstacble_ptr);
-double center_dist = pow(ptr->x-envelope.transform_x,2)+
-                     pow(ptr->y-envelope.transform_y,2)+
-                     pow(ptr->z-envelope.transform_z,2);
-
-if(sqrt(center_dist) < ptr->radius + envelope.radius){
-    // std::cout<<"Obstacle occur collision with envelope belonged to the "<<index<<" arm"<<std::endl;
-    // flag = true;
-    return true;
-}
+if(envelope_position_.find(index) == envelope_position_.end())
+  continue;
+else{
+    Eigen::MatrixXf new_pos = tranform_matrix * envelope_position_[index];
+    Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+    for(auto obstacble_ptr:scence.get_obstacles())
+    {
+    std::shared_ptr<SphereObstacle> ptr = std::static_pointer_cast<SphereObstacle>(obstacble_ptr);
+    Eigen::Vector4f obstacble_pos;
+    obstacble_pos<<ptr->x,ptr->y,ptr->z,1.0f;
+    Eigen::MatrixXf diff = new_pos.array() - obstacble_pos.array().replicate(1,new_pos.cols());
+    Eigen::VectorXf is_collision = (diff.colwise().norm().transpose().array() < (envelope_radius_[index].array() + ptr->radius)).cast<float>();
+    if(is_collision.any())
+       return true;
+    }
+    }
+     
 }
 
-}
-}
+// Eigen::MatrixXf tranform_matrix_ = Eigen::Matrix4f::Identity();
+// // 得到每个包络体在机械臂基底坐标系下的坐标
+// for(size_t index{0}; index < DOF; index++)
+// {
+// // 得到每一帧到基底坐标系的转换矩阵
+// tranform_matrix_ = tranform_matrix_ * frameTransform(a_[index],d_[index],alpha_[index], theta_[index]);
+// Eigen::Vector4f position;
+// // std::cout<<"Index "<<index<<std::endl;
+// for(auto &envelope:envelopes_[index])
+// {
+// position<<envelope.x,envelope.y,envelope.z,1.0f;
+// Eigen::Vector4f goal_pos = tranform_matrix_ * position;
+// envelope.transform_x = goal_pos(0);
+// envelope.transform_y = goal_pos(1);
+// envelope.transform_z = goal_pos(2);
+
+// // std::cout<<"new postion: x"<<goal_pos(0)<<" y "<<goal_pos(1)<<" z "<<goal_pos(2)<<std::endl;
+
+// // std::cout<<"x: "<<goal_pos(0)<<" y: "<<goal_pos(1)<<" z:"<<goal_pos(2)<<std::endl;
+// // 遍历所有障碍物，看看是否发生碰撞
+// for(const auto& obstacble_ptr:scence.get_obstacles())
+// {
+// // TODO：目前是使用球形障碍物进行算法测试，后面将会使用八叉树表达障碍物的存在
+// std::shared_ptr<SphereObstacle> ptr = std::dynamic_pointer_cast<SphereObstacle>(obstacble_ptr);
+// double center_dist = pow(ptr->x-envelope.transform_x,2)+
+//                      pow(ptr->y-envelope.transform_y,2)+
+//                      pow(ptr->z-envelope.transform_z,2);
+
+// if(sqrt(center_dist) < ptr->radius + envelope.radius){
+//     // std::cout<<"Obstacle occur collision with envelope belonged to the "<<index<<" arm"<<std::endl;
+//     // flag = true;
+//     return true;
+// }
+// }
+
+// }
+// }
 
 return false;
 }

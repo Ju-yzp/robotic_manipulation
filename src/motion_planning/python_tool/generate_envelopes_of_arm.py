@@ -61,7 +61,9 @@ class EnvelopeGenerator:
         print(f'center z ',{z})
 
         max_x = np.max(np.abs(data_pca[:, 0]))  # 直接计算第一列的绝对值最大值
+        min_x = np.max(np.abs(data_pca[:, 0]))  # 直接计算第一列的绝对值最小值
         max_y = np.max(np.abs(data_pca[:, 1]))  # 直接计算第二列的绝对值最大值
+        min_y = np.max(np.abs(data_pca[:, 1]))  # 直接计算第二列的绝对值最小值
 
         print(f"X 轴绝对值最大分量: {max_x}")
         print(f"Y 轴绝对值最大分量: {max_y}")
@@ -101,7 +103,7 @@ if __name__ == '__main__':
     # model_files.append('/home/up/robotics-manipulation/src/mujoco_resource/assets/forearm_0.obj')
     # model_files.append('/home/up/robotics-manipulation/src/mujoco_resource/assets/forearm_1.obj')
     # model_files.append('/home/up/robotics-manipulation/src/mujoco_resource/assets/forearm_2.obj')
-    model_files.append('/home/up/robotics-manipulation/src/mujoco_resource/assets/wrist3.obj')
+    model_files.append('/home/up/robotics-manipulation/src/mujoco_resource/assets/forearm_1.obj')
 
     # try:
     #     if not os.path.exists(specify_search_directory):

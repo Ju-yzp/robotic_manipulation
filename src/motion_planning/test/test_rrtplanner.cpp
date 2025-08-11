@@ -8,6 +8,7 @@
 #include <motion_planning/robotModel.hpp>
 #include <motion_planning/mujoco_window.hpp>
 #include <motion_planning/RRTPlanner.hpp>
+
 #include <thread>
 
 int main()

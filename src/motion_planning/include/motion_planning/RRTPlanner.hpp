@@ -40,8 +40,8 @@ stop_threshold_(stop_threshold)
  
 PlannerOption()
 :max_iter_count_(100000),
-step_(25.0f),
-stop_threshold_(100.0f)
+step_(8.0f),
+stop_threshold_(30.0f)
 {}
 
 uint32_t get_max_iter_count(){ return max_iter_count_; }

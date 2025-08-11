@@ -30,7 +30,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 target_link_libraries(${PROJECT_NAME}
   PUBLIC
-  Eigen3::Eigen
+  
 )
 
 ament_export_targets(export_motion_planning HAS_LIBRARY_TARGET)

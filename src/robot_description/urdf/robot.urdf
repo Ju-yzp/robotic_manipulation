@@ -309,7 +309,7 @@
   </joint>
 
   <!-- ros2_control控制部分 -->
-     <ros2_control name="ur5e" type="system">
+     <!-- <ros2_control name="ur5e" type="system">
 
       <hardware>
         <plugin>ros2_control_ur5e_test/UR5ESystem</plugin>
@@ -405,5 +405,5 @@
         <state_interface name="velocity"/>
       </joint>
 
-    </ros2_control>
+    </ros2_control> -->
 </robot>

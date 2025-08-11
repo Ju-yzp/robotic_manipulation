@@ -27,4 +27,5 @@ make -j<num> #根据自己实际核心数目选择并行编译线程数量，我
 ## Contact Way
 
 - 📧 邮箱：Jup230551l@outlook.com
-- 🔗 GitHub：[![GitHub](https://img.shields.io/badge/GitHub-Ju-yzp-blue)](https://github.com/Ju-yzp)
+- 🔗 GitHub：[![GitHub](https://img.shields.io/badge/GitHub-Ju-yzp)](https://github.com/Ju-yzp)
+

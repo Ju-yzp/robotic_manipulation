@@ -54,7 +54,7 @@ return envelope_map_[id_map_[link_name]];
 
 void parse_configuration_file(const std::string config_file)
 {
-size_t index{0};
+size_t count{0};
 namespace fs = std::filesystem;
 if(!fs::exists(config_file))
     std::runtime_error("This file that user passed isn't exists ");
@@ -74,8 +74,8 @@ std::cerr<<"Skip auto wrong link"<<std::endl;
 continue;
 }
 std::string link_name = link["link_name"].as<std::string>();
-envelope_map_[index] = std::vector<Envelope<Scalar>>();
-id_map_[link_name] = index;
+envelope_map_[count] = std::vector<Envelope<Scalar>>();
+id_map_[link_name] = count;
 
 //std::cout<<__FILE__<<__LINE__<<std::endl;
 assert(link["position"].size() == link["radius"].size());
@@ -90,11 +90,11 @@ auto radius = radius_vector[index].as<Scalar>();
 
 envelope.pos << position[0],position[1],position[2];
 envelope.radius = radius;
-envelope_map_[index].push_back(envelope);
+envelope_map_[count].push_back(envelope);
 }
 std::cout<<"Link's name is "<<link_name<<std::endl;
 
-index++;
+count++;
 }
 }
 

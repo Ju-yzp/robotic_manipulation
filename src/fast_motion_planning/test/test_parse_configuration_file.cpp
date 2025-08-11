@@ -10,7 +10,7 @@ std::string file_path = "/home/up/robotics-manipulation/src/fast_motion_planning
 
 envelope_group.parse_configuration_file(file_path);
 
-auto envelopes = envelope_group.get_specfity_link_envelope("upperarm_link");
+auto envelopes = envelope_group.get_specfity_link_envelope("forearm_link");
 
 Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
 

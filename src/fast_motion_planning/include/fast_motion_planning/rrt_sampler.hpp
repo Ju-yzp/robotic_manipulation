@@ -25,7 +25,9 @@ public:
 RRTSampler(SamplerOption &option)
 :SamplerBaseInterface(option){}
 
-RRTSampler(){}
+RRTSampler(){
+releaseMemoryResource();
+}
 
 void plan(const Pose inital_pose,const Pose target_pose);
 

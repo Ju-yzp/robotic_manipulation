@@ -30,12 +30,14 @@ void RRTConnnectSampler::monitor_rrt_sampler(RRTSampler& lsampler,RRTSampler& rs
 {
 while(true)
 {
-std::cout<<"we prepare to stop sampler's sample work RRTConnectSampler managed "<<std::endl;
 lsampler.get_stop_sample_flag().store(false,std::memory_order_relaxed);
 rsampler.get_stop_sample_flag().store(false,std::memory_order_relaxed);
+std::cout<<"we prepare to make sampler' to work "<<std::endl;
 std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
 lsampler.get_stop_sample_flag().store(true,std::memory_order_relaxed);
 rsampler.get_stop_sample_flag().store(true,std::memory_order_relaxed);
+std::cout<<"we prepare to stop sampler's sample work RRTConnectSampler managed "<<std::endl;
 std::this_thread::sleep_for(std::chrono::milliseconds(20));
 }   
 }

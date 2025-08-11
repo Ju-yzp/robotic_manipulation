@@ -1,0 +1,46 @@
+links:
+   - link_name: "shoulder_link"
+     position:
+     - [0.0,0.0,0.0]
+     radius:
+     - 0.092
+
+   - link_name: "upperarm_link"
+     position:
+     - [0.28,0.0,0.004]
+     - [0.42,0.0,0.004]
+     - [0.14,0.0,0.004]
+     - [0.0,0.0,0.004]
+     radius:
+     - 0.092
+     - 0.092
+     - 0.092
+     - 0.092
+
+   - link_name: "forearm_link"
+     position:
+     - [0.249,0.0,-0.115]
+     - [0.119,0.0,-0.115]
+     - [0.379,0.0,-0.115]
+     radius:
+     - 0.08846
+     - 0.08846
+     - 0.08846
+
+   - link_name: "wrist_1_link"
+     position:
+     - [0.0,0.0,-0.010340]
+     radius:
+     - 0.075
+
+   - link_name: "wrist_2_link"
+     position:
+     - [0.0,0.0,0.0910]
+     radius:
+     - 0.070
+
+   - link_name: "wrist_3_link"
+     position:
+     - [0.0,0.0,0.0856]
+     radius:
+     - 0.060

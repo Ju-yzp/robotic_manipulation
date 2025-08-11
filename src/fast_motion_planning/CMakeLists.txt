@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # find_package(urdfdom REQUIRED)
+find_package(yaml-cpp REQUIRED)
 find_package(Eigen3 3.3 REQUIRED)
 # add_subdirectory("third_library/urdf_parser")
 
@@ -45,6 +46,7 @@ foreach(CPP_FILE ${CPP_FILES})
         
     target_link_libraries(${FILE_PREFIX} PRIVATE 
     sampler
+    yaml-cpp
     )
 
     install(TARGETS ${FILE_PREFIX}

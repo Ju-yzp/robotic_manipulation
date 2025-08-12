@@ -63,7 +63,7 @@ if(joint_limit_map_[index].joint_type == JointType::REVOLUTE)
 
 if(joint_limit_map_[index].joint_type == JointType::UNKNOWN)
 {
-std::cout<<"Because type is unknown, we  right by default"<<std::endl;
+std::cout<<"Because joint type is unknown, we  right by default"<<std::endl;
 return false;
 }
 }
@@ -140,6 +140,10 @@ std::unordered_map<std::size_t,JointLimit> joint_limit_map_;
 std::unordered_map<std::string,std::size_t> id_map_;
 
 };
+
+using JointLimitGroupd = JointLimitGroup<double>;
+using JointLimitGroupf = JointLimitGroup<float>;
+using JointLimitGroupi = JointLimitGroup<int>;
 }
 
 #endif

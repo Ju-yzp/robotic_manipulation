@@ -10,6 +10,11 @@
 
 namespace fast_motion_planning {
 
+
+class RRTSampler:public SamplerBaseInterface
+{
+public:
+
 struct RRTNode
 {
 std::vector<double> solution;
@@ -17,10 +22,6 @@ std::vector<RRTNode *> children;
 Pose state;
 RRTNode* parent;
 };
-
-class RRTSampler:public SamplerBaseInterface
-{
-public:
 
 RRTSampler(SamplerOption &option)
 :SamplerBaseInterface(option){}

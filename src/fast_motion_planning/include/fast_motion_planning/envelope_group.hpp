@@ -119,7 +119,8 @@ std::unordered_map<std::size_t,std::vector<Envelope>> envelope_map_;
 std::unordered_map<std::string,std::size_t> id_map_;
 };
 
-typedef EnvelopeGroup<double> EnvelopeGroupd;
-typedef EnvelopeGroup<float> EnvelopeGroupf;
+using EnvelopeGroupd = EnvelopeGroup<double> ;
+using EnvelopeGroupf = EnvelopeGroup<float> ;
+using EnvelopeGroupi = EnvelopeGroup<int>;
 }
 #endif

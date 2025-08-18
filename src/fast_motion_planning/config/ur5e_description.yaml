@@ -1,0 +1,11 @@
+robot_params:
+     - joint: "shoulder_pan"
+       type: "revolute"
+       position_upper: 1.57
+       position_lower: -1.57
+       velocity_upper: 0.3
+       velocity_lower: -0.3
+       envelopes_position:
+       - [0.0,0.0,0.0]
+       envelopes_radius:
+       - 0.092

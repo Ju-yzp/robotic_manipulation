@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.10)
-project(motion_planner)
+project(motion_test_status_space_manager)
 
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 
 # find_package(urdfdom REQUIRED)
 find_package(yaml-cpp REQUIRED)
@@ -15,14 +16,16 @@ find_package(Eigen3 3.3 REQUIRED)
 ## BUILDING ##
 ##############
 
-add_library(sampler  
-src/rrt_connect_sampler.cpp 
-src/rrt_sampler.cpp)
+add_library(ur5e_kinematic_solver
+src/ur5e_kinematic_solver.cpp
+src/status_space_manager.cpp
+)
 
-target_include_directories(sampler PRIVATE
+target_include_directories(ur5e_kinematic_solver PRIVATE
 $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
 #$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/third_library/urdf_parser/include>)
-target_link_libraries(sampler
+
+target_link_libraries(ur5e_kinematic_solver
   PUBLIC
   Eigen3::Eigen
 )
@@ -45,8 +48,8 @@ foreach(CPP_FILE ${CPP_FILES})
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
         
     target_link_libraries(${FILE_PREFIX} PRIVATE 
-    sampler
     yaml-cpp
+    ur5e_kinematic_solver
     )
 
     install(TARGETS ${FILE_PREFIX}

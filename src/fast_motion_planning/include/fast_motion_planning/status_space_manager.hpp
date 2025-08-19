@@ -4,7 +4,7 @@
  * Created:
  *   YYYY-08-2025年8月18日 23:07:06
  * Last edited:
- *   YYYY-08-2025年8月19日 01:18:49
+ *   YYYY-08-2025年8月19日 08:15:16
  * Auto updated?
  *   Yes
  *
@@ -68,7 +68,7 @@ explicit StatusSpaceManager(double min_x,double max_x,double min_y,double max_y,
 std::vector<SpaceNode *> get_active_space(){ return space_map_[StatusType::ACTIVE]; };
 
 // 获取无效空间节点
-std::vector<SpaceNode *> get_INVALID_space(){ return space_map_[StatusType::INVALID]; };
+std::vector<SpaceNode *> get_invalid_space(){ return space_map_[StatusType::INVALID]; };
 
 // 获取有效空间节点
 std::vector<SpaceNode *> get_valid_space(){ return space_map_[StatusType::VALID]; };

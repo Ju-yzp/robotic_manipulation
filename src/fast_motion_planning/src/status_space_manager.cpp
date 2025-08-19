@@ -2,6 +2,7 @@
 #include<algorithm>
 #include<cstddef>
 #include<functional>
+#include<iostream>
 
 // fast motion planning
 #include<fast_motion_planning/status_space_manager.hpp>
@@ -13,7 +14,7 @@ StatusSpaceManager::StatusSpaceManager(double min_x,double max_x,double min_y,do
 {
 initialize(min_x, max_x, min_y, max_y, min_z, max_z);
 
-space_map_[StatusType::ACTIVE] = std::vector<SpaceNode *>();
+space_map_[StatusType::ACTIVE] = get_leaf_nodes();
 space_map_[StatusType::INVALID] = std::vector<SpaceNode *>();
 space_map_[StatusType::VALID] = std::vector<SpaceNode *>();
 }
@@ -34,7 +35,6 @@ root_->x_extent =  std::abs(max_x - min_x) / 2.0;
 root_->y_extent =  std::abs(max_y - min_y) / 2.0;
 root_->z_extent =  std::abs(max_z - min_z) / 2.0;
 build(root_);
-space_map_[StatusType::ACTIVE] = get_leaf_nodes();
 }
 
 void StatusSpaceManager::build(SpaceNode* const parent)
@@ -89,11 +89,11 @@ if(!parent)
    return nullptr;
 
 if(translation(0) < parent->center(0) + parent->x_extent && 
-   translation(0) < parent->center(0) + parent->x_extent &&
-   translation(0) < parent->center(0) + parent->x_extent &&
-   translation(0) < parent->center(0) + parent->x_extent &&
-   translation(0) < parent->center(0) + parent->x_extent &&
-   translation(0) < parent->center(0) + parent->x_extent)
+   translation(0) > parent->center(0) - parent->x_extent &&
+   translation(1) < parent->center(1) + parent->y_extent &&
+   translation(1) > parent->center(1) - parent->y_extent &&
+   translation(2) < parent->center(2) + parent->z_extent &&
+   translation(2) > parent->center(2) - parent->z_extent)
 {
 size_t id{0};
 if(!parent->children[id])
@@ -204,10 +204,13 @@ node->z_extent = z_extent ;
 {
 // 在映射表通过对内存地址的对比找到的该节点在容器中的位置
 // TODO: 通过vector内置函数erase删除后，迭代器已经失效,所以使用{}从形成scope(栈的巧妙之处)根本上杜绝后面错误使用
-auto  container = space_map_[parent->type];
+auto&  container = space_map_[parent->type];
 auto iter = container.begin();
 for(; iter != container.end(); ++iter)
-   if(*iter == parent) { container.erase(iter);break;}
+   if(*iter == parent) { 
+      std::cout<<"The address of pointer is "<<*iter<<std::endl;
+      container.erase(iter);
+      break;}
 
 }
 

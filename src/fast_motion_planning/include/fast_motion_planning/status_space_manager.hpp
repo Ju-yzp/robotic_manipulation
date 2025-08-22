@@ -4,7 +4,7 @@
  * Created:
  *   YYYY-08-2025年8月18日 23:07:06
  * Last edited:
- *   YYYY-08-2025年8月19日 08:15:16
+ *   YYYY-08-2025年8月22日 02:01:48
  * Auto updated?
  *   Yes
  *
@@ -21,6 +21,7 @@
 #include<cstdint>
 #include<unordered_map>
 #include<vector>
+#include<memory>
 
 // eigen
 #include<Eigen/Eigen>
@@ -57,6 +58,9 @@ class StatusSpaceManager
 {
 public:
 
+using UniquePtr = std::unique_ptr<StatusSpaceManager>;
+using SharedPtr = std::shared_ptr<StatusSpaceManager>;
+
 // 用户必须提供不精确的工作空间数据（呈立方体）
 explicit StatusSpaceManager(double min_x,double max_x,double min_y,double max_y,
                             double min_z,double max_z);
@@ -84,6 +88,10 @@ void update(const Eigen::Vector3d position,const SpaceNode *node,bool is_reached
 
 std::vector<SpaceNode *> get_leaf_nodes();
 
+bool is_activate(const Eigen::Vector3d& translation);
+
+Eigen::Vector<double,6> get_space(const Eigen::Vector3d& translation);
+
 private:
 
 // 采样点的分布情况
@@ -107,7 +115,7 @@ void releaseMemoryResource(SpaceNode * const parent);
 void spaceDivide(SpaceNode * const parent);
 
 // TODO:一般传入的都是根节点
-SpaceNode* sreachSpaceNode(const Eigen::Vector3d translation,const SpaceNode * const parent);
+SpaceNode* searchSpaceNode(const Eigen::Vector3d& translation,const SpaceNode * const parent);
 
 // 根节点
 SpaceNode *root_ = nullptr;
@@ -116,13 +124,15 @@ SpaceNode *root_ = nullptr;
 std::unordered_map<StatusType, std::vector<SpaceNode *>> space_map_;
 
 // 空间节点最大容量
-std::size_t max_capacity_{300};
+std::size_t max_capacity_{500};
 
 // 划分空间时，每个节点空间在每个轴上的长度的一半都得小于这个阈值
-double extent_threshold_{70.0};
+double extent_threshold_{100.0};
 
 // 最小长度，重新划分一个节点空间时，每个轴上的长度都得大于它
 double min_extent_{30};
+
+
 };
 }
 #endif 

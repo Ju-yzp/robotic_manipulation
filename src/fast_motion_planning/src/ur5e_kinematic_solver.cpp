@@ -1,5 +1,8 @@
+// fast motion planning
 #include<fast_motion_planning//ur5e_kinematic_solver.hpp>
 
+// cpp
+#include<cassert>
 #include<array>
 #include<vector>
 
@@ -70,9 +73,9 @@ Eigen::Matrix4d frame6_to_frame1 = frameTransform(a_table_(0),
 
 frame6_to_frame1(1,3) -= std::abs(d_table_(1));
 
-Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
-std::cout << "----Frame6 To Frame0----" << std::endl;
-std::cout << frame6_to_frame1.format(CleanFmt) << std::endl;
+// Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+// std::cout << "----Frame6 To Frame0----" << std::endl;
+// std::cout << frame6_to_frame1.format(CleanFmt) << std::endl;
 
 float wrist_solution[2][3];
 getWristThetas(frame6_to_frame1, wrist_solution[0]);
@@ -82,23 +85,22 @@ endeffector_to_base = endeffector_to_base *
                       frameTransform(a_table_(4),d_table_(4),alpha_table_(4),wrist_solution[0][1])*
                       frameTransform(a_table_(5),d_table_(5),alpha_table_(5),wrist_solution[0][2]);
 
-std::cout << "----Rotation  Matrix----" << std::endl;
-std::cout << endeffector_to_base.format(CleanFmt) << std::endl;
+// std::cout << "----Rotation  Matrix----" << std::endl;
+// std::cout << endeffector_to_base.format(CleanFmt) << std::endl;
 Eigen::Matrix4d endeffector_to_base1 = Eigen::Matrix4d::Identity();
 endeffector_to_base1 = endeffector_to_base1 * 
                       frameTransform(a_table_(1),d_table_(1),alpha_table_(1),wrist_solution[1][0])*
                       frameTransform(a_table_(4),d_table_(4),alpha_table_(4),wrist_solution[1][1])*
                       frameTransform(a_table_(5),d_table_(5),alpha_table_(5),wrist_solution[1][2]);
 
-std::cout << "----Rotation  Matrix1----" << std::endl;
-std::cout << endeffector_to_base1.format(CleanFmt) << std::endl;
+// std::cout << "----Rotation  Matrix1----" << std::endl;
+// std::cout << endeffector_to_base1.format(CleanFmt) << std::endl;
 
 for(size_t inner_index = 0; inner_index < 2; inner_index++)
 {
 std::vector<std::array<float,3>> arm_solutions;
-getArmThetas(wrist_solution[inner_index][0],arm_solutions, frame6_to_frame1);
-
-
+if (!getArmThetas(wrist_solution[inner_index][0],arm_solutions, frame6_to_frame1))
+    continue;
 for(auto arm_solution:arm_solutions)
 {
 all_solutions.push_back(Eigen::Vector<double,UR5E_DOF>{-theta1[index],
@@ -108,6 +110,7 @@ all_solutions.push_back(Eigen::Vector<double,UR5E_DOF>{-theta1[index],
                                                             wrist_solution[inner_index][1],
                                                             wrist_solution[inner_index][2]});
 }
+
 }
 }
 std::vector<Eigen::VectorXd> x;
@@ -206,7 +209,7 @@ wrist_solution[5] = atan2(-pose(1,1)/sin(wrist_solution[4]),pose(1,0)/sin(wrist_
 
 }
 
-void Ur5eKinematicSolver::getArmThetas(float total_theta,std::vector<std::array<float,3>>& arm_solutions,
+bool Ur5eKinematicSolver::getArmThetas(float total_theta,std::vector<std::array<float,3>>& arm_solutions,
                                           Eigen::Matrix4d &pose)
 {
 
@@ -219,8 +222,10 @@ float a3 = a_table_(3);
 
 float len = sqrt(pow(new_x,2) + pow(new_z,2));
 
-// if(a2 + a3 < len || a2 - a3 > len)
-//    std::cout<<"Cound't reach specify pose"<<std::endl;
+if(a2 + a3 < len || a2 - a3 > len){
+   //std::cout<<"Cound't reach specify pose"<<std::endl;
+   return false;
+}
 
 float beta = acos((pow(len,2)+pow(a2,2)-pow(a3,2))/(2.0f*len*a2));
 float gama = atan2(new_z,new_x);
@@ -245,5 +250,21 @@ float theta3_2 = atan2(y2,x2) + beta + gama;
 
 // Case2:
 arm_solutions.push_back(std::array<float,3>{-beta-gama,theta3_2,total_theta+beta+gama-theta3_2});
+return true;
+}
 
+void Ur5eKinematicSolver::update_envelopes_position(const Eigen::VectorXd& joint_configuration)
+{
+assert(joint_configuration.rows() == UR5E_DOF);
+
+Eigen::Matrix4d matrix = Eigen::Matrix4d::Identity();
+for(size_t id{0}; id < UR5E_DOF; ++id)
+{
+matrix = matrix * frameTransform(a_table_[id], d_table_[id], alpha_table_[id], joint_configuration[id]);
+auto& envelopes = robot_description_->get_envelopes(name_map_[id]);
+// std::cout<<"------"<<name_map_[id]<<"------"<<std::endl;
+for(auto& envelope:envelopes){
+  envelope.last_position = matrix * envelope.translation;
+ }
+}
 }

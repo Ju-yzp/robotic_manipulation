@@ -44,9 +44,16 @@ struct JointLimitGroup
 std::unordered_map<std::string,JointLimit> jointlimit_map;
 };
 
+struct Envelope
+{
+Eigen::Vector<Scalar,4> last_position;
+Eigen::Vector<Scalar,4> translation;
+double radius;
+};
+
 struct EnvelopeGroup
 {
-std::unordered_map<std::string,std::vector<Eigen::Vector<Scalar,4>>> envelope_map_;
+std::unordered_map<std::string,std::vector<Envelope>> envelope_map_;
 };
 
 RobotDescription(const std::string configuration_file)
@@ -93,15 +100,16 @@ const auto& radius_set = joint_msg["envelopes_radius"];
 
 assert(position_set.size() == radius_set.size());
 
-std::vector<Eigen::Vector<Scalar,4>> envelopes;
+std::vector<Envelope> envelopes;
 for(size_t index{0}; index < position_set.size(); ++index)
 {
 auto const& position = position_set[index].as<std::vector<Scalar>>();
 assert(position.size() == 3);
 auto radius = radius_set[index].as<Scalar>();
-Eigen::Vector<Scalar,4> msg;
-msg <<position[0],position[1],position[2],radius;
-envelopes.emplace_back(msg);
+Envelope envelope;
+envelope.translation <<position[0],position[1],position[2],1.0;
+envelope.radius = radius;
+envelopes.emplace_back(envelope);
 }
 envelope_group_.envelope_map_[joint_name] = envelopes;
 }
@@ -117,7 +125,7 @@ if(jointlimits.find(joint_name) == jointlimits.end())
 return jointlimit_group_.jointlimit_map[joint_name];
 }
 
-std::vector<Eigen::Vector<Scalar, 4>> get_envelopes(const std::string joint_name)
+std::vector<Envelope>& get_envelopes(const std::string joint_name)
 {
 const auto& envelopes = envelope_group_.envelope_map_;
 if(envelopes.find(joint_name) == envelopes.end())

@@ -4,7 +4,7 @@
  * Created:
  *   YYYY-08-2025年8月16日 19:17:36
  * Last edited:
- *   YYYY-08-2025年8月16日 22:50:58
+ *   YYYY-08-2025年8月21日 11:46:36
  * Auto updated?
  *   Yes
  *
@@ -15,18 +15,27 @@
 #ifndef FAST_MOTION_PLANNING_KINEMATIC_SOLVER_BASE_INTERFACE_HPP_
 #define FAST_MOTION_PLANNING_KINEMATIC_SOLVER_BASE_INTERFACE_HPP_
 
+// eigen
 #include<Eigen/Eigen>
 #include<Eigen/src/Core/Matrix.h>
 #include<Eigen/src/Geometry/Quaternion.h>
 
+// cpp
+#include<memory>
 #include<vector>
+
+// fast motion planning
+#include<fast_motion_planning/robot_description.hpp>
 
 namespace fast_motion_planning {
 
 class KinematicSolverBaseInterface
 {
 public:
-KinematicSolverBaseInterface(){}
+using UniquePtr = std::unique_ptr<KinematicSolverBaseInterface>;
+using SharedPtr = std::shared_ptr<KinematicSolverBaseInterface>;
+KinematicSolverBaseInterface(RobotDescription<double>::SharedPtr& robot_description)
+:robot_description_(robot_description){}
 
 virtual ~KinematicSolverBaseInterface(){};
 
@@ -39,7 +48,16 @@ goal_end_effector_pose.block<3, 3>(0, 0) = quaternion.toRotationMatrix();
 goal_end_effector_pose.block<3, 1>(0, 3) = translation;
 return solveInverseKinematic(goal_end_effector_pose);
 }
+
+virtual void  update_envelopes_position(const Eigen::VectorXd& joint_configuration) = 0;
+
+protected:
+
+// 机器人描述
+RobotDescription<double>::SharedPtr robot_description_;
+
 };
+
 }
 
 #endif

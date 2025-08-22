@@ -3,9 +3,10 @@
 #include<cstddef>
 #include<functional>
 #include<iostream>
-
+#include<fstream>
 // fast motion planning
 #include<fast_motion_planning/status_space_manager.hpp>
+#include<limits>
 
 
 namespace fast_motion_planning {
@@ -83,29 +84,37 @@ space_map_[StatusType::VALID].clear();
 initialize(min_x, max_x,  min_y,  max_y, min_z,  max_z);
 }
 
-SpaceNode* StatusSpaceManager::sreachSpaceNode(const Eigen::Vector3d translation,const SpaceNode * const parent)
-{
-if(!parent)
-   return nullptr;
+// 修正函数名拼写：sreach -> search
+SpaceNode* StatusSpaceManager::searchSpaceNode(const Eigen::Vector3d& translation, const SpaceNode* parent) {
+    if (!parent) {
+        return nullptr;  // 父节点为空，直接返回
+    }
 
-if(translation(0) < parent->center(0) + parent->x_extent && 
-   translation(0) > parent->center(0) - parent->x_extent &&
-   translation(1) < parent->center(1) + parent->y_extent &&
-   translation(1) > parent->center(1) - parent->y_extent &&
-   translation(2) < parent->center(2) + parent->z_extent &&
-   translation(2) > parent->center(2) - parent->z_extent)
-{
-size_t id{0};
-if(!parent->children[id])
-   return const_cast<SpaceNode *>(parent);
+    // 检查translation是否在当前节点的空间范围内（包含边界）
+    bool in_x = (translation(0) <= parent->center(0) + parent->x_extent) && 
+                (translation(0) >= parent->center(0) - parent->x_extent);
+    bool in_y = (translation(1) <= parent->center(1) + parent->y_extent) && 
+                (translation(1) >= parent->center(1) - parent->y_extent);
+    bool in_z = (translation(2) <= parent->center(2) + parent->z_extent) && 
+                (translation(2) >= parent->center(2) - parent->z_extent);
 
-id = (translation(0) > parent->center(0) ? 1 : 0) + 
-     (translation(1) > parent->center(1) ? 2 : 0) + 
-     (translation(2) > parent->center(2) ? 4 : 0) ;
-return sreachSpaceNode(translation, parent->children[id]);
-}else { return nullptr; }
+    if (!in_x || !in_y || !in_z) {
+        // 不在当前节点范围内，返回当前节点（作为边界节点）
+        return const_cast<SpaceNode*>(parent);
+    }
+
+    // 计算子节点索引（0-7，对应八叉树8个子节点）
+    size_t id = (translation(0) > parent->center(0) ? 1 : 0) + 
+                (translation(1) > parent->center(1) ? 2 : 0) + 
+                (translation(2) > parent->center(2) ? 4 : 0);
+
+    // 若对应子节点存在，递归搜索子节点；否则返回当前节点
+    if (parent->children[id]) {
+        return searchSpaceNode(translation, parent->children[id]);
+    } else {
+        return const_cast<SpaceNode*>(parent);
+    }
 }
-
 std::vector<SpaceNode *> StatusSpaceManager::get_leaf_nodes()
 {
 std::vector<SpaceNode *> leaf_nodes;
@@ -130,15 +139,53 @@ return leaf_nodes;
 
 void StatusSpaceManager::update(const Eigen::Vector3d position,bool is_reached)
 {
-SpaceNode *node = sreachSpaceNode(position, root_);
+SpaceNode *node = searchSpaceNode(position, root_);
 if(!node) return;
 
+
 // 统计学方差
-static std::function<DistributionType (std::vector<Eigen::Vector3d>&)> statistic_func = 
-[](std::vector<Eigen::Vector3d>& points)->decltype(auto)
-{
-return DistributionType::LOCAL_CONCENTRATION;
-};
+// static std::function<DistributionType (std::vector<Eigen::Vector3d>&,SpaceNode *)> statistic_func = 
+// [](std::vector<Eigen::Vector3d>& points,SpaceNode * node)->decltype(auto)
+// {
+// // 显示采样点范围
+// double min_x = std::numeric_limits<double>::infinity();
+// double max_x = std::numeric_limits<double>::lowest();
+// double min_y = std::numeric_limits<double>::infinity();
+// double max_y = std::numeric_limits<double>::lowest();
+// double min_z = std::numeric_limits<double>::infinity();
+// double max_z = std::numeric_limits<double>::lowest();
+
+// Eigen::Vector3d average = Eigen::Vector3d::Zero();
+
+// std::for_each(points.begin(),points.end(),[&](const auto& point)
+// {
+// average += point;
+// min_x = point(0) < min_x ? point(0) : min_x;
+// max_x = point(0) > max_x ? point(0) : max_x;
+// min_y = point(1) < min_y ? point(1) : min_y;
+// max_y = point(1) > max_y ? point(1) : max_y;
+// min_z = point(2) < min_z ? point(2) : min_z;
+// max_z = point(2) > max_z ? point(2) : max_z;
+// });
+
+// average /= (double)(points.size() + 1);
+
+// bool x_1 = min_x > node->center(0);
+// bool x_2 = max_x > node->center(0);
+// bool y_1 = min_y > node->center(1);
+// bool y_2 = max_y > node->center(1);
+// bool z_1 = min_z > node->center(2);
+// bool z_2 = max_z > node->center(2);
+
+// sort(points.begin(),points.end(),[](auto& point1,auto& point2)
+// {return point1.norm() > point2.norm();});
+
+// if((x_1&x_2)&&(y_1&y_2)&&(z_1&z_2))
+// {
+// std::cout<<"集中分布"<<std::endl;
+// }
+// return DistributionType::LOCAL_CONCENTRATION;
+// };
 
 // 只有为活跃状态的节点需要更新,其他类型的代表这个节点所在空间已经充分探索，再继续做采样工作是没意义的
 if(node->type == StatusType::ACTIVE)
@@ -159,10 +206,9 @@ auto total_count = node->invalid_points.size() + node->valid_points.size();
 // 我们甚至可以引入一种机制：
 // 如果有效采样点和无效采样点待在该体素空间的不同方向上
 // TODO: 等待学习相关的统计学知识后写出更加完善的核心代码
-if(total_count >= max_capacity_ * 0.75)
-{
-
-}
+if(total_count >= max_capacity_)
+   node->type =(double)( node->invalid_points.size()) /(double) (total_count + 1) > 0.4 ?
+               StatusType::INVALID : StatusType::INVALID;
 }
 
 auto& active_nodes = space_map_[StatusType::ACTIVE];
@@ -171,7 +217,8 @@ auto& active_nodes = space_map_[StatusType::ACTIVE];
 std::for_each(active_nodes.begin(),active_nodes.end(),
 [this](SpaceNode *node)
 {
-    space_map_[node->type].emplace_back(node);
+    if(node->type != StatusType::ACTIVE)
+      space_map_[node->type].emplace_back(node);
 });
 
 // 删除在存储活跃节点中的容器已经不是活跃状态的节点
@@ -218,4 +265,23 @@ for(std::size_t id{0}; id < 8; ++id)
     space_map_[parent->children[id]->type].emplace_back(parent->children[id]);
 }
 
+bool StatusSpaceManager::is_activate(const Eigen::Vector3d& translation)
+{
+auto node  = searchSpaceNode(translation, root_);
+if(!node)
+   return false;
+for(auto active_node:space_map_[StatusType::ACTIVE])
+{
+if(node == active_node)
+   return true;
+}
+return false;
+}
+
+Eigen::Vector<double,6> StatusSpaceManager::get_space(const Eigen::Vector3d& translation)
+{
+auto node =searchSpaceNode(translation,root_);
+return Eigen::Vector<double,6>{node->center(0),node->center(1),node->center(2),
+                               node->x_extent * 1.5,node->y_extent * 1.5,node->z_extent * 1.5};
+}
 }

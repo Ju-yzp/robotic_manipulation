@@ -13,7 +13,7 @@ Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
 std::cout << "Printf Envelope" << std::endl << std::endl;
 for(const auto& envelope:ur5e_description.get_envelopes(joint_name))
 {
-std::cout << envelope.format(CleanFmt) << std::endl << std::endl;; 
+std::cout << envelope.translation.format(CleanFmt) << std::endl << std::endl;
 }
 
 if(ur5e_description.is_over_joint_position_limit(2.0f, joint_name))

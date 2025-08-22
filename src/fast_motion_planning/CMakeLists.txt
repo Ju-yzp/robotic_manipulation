@@ -8,6 +8,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
 # find_package(urdfdom REQUIRED)
+set(MUJOCO_FOLDER /usr/local/lib/cmake)
+find_package(mujoco REQUIRED PATHS ${MUJOCO_FOLDER} NO_DEFAULT_PATH)
 find_package(yaml-cpp REQUIRED)
 find_package(Eigen3 3.3 REQUIRED)
 # add_subdirectory("third_library/urdf_parser")
@@ -19,6 +21,8 @@ find_package(Eigen3 3.3 REQUIRED)
 add_library(ur5e_kinematic_solver
 src/ur5e_kinematic_solver.cpp
 src/status_space_manager.cpp
+src/collision_detector.cpp
+src/sampler.cpp
 )
 
 target_include_directories(ur5e_kinematic_solver PRIVATE
@@ -50,6 +54,10 @@ foreach(CPP_FILE ${CPP_FILES})
     target_link_libraries(${FILE_PREFIX} PRIVATE 
     yaml-cpp
     ur5e_kinematic_solver
+            mujoco::mujoco  
+        GL 
+        GLU 
+        glfw 
     )
 
     install(TARGETS ${FILE_PREFIX}

@@ -10,6 +10,58 @@
 #include<fstream>
 namespace fast_motion_planning {
 
+template<typename Scalar>
+std::vector<Eigen::Quaternion<Scalar>> slerpInterpolation(
+    const Eigen::Quaternion<Scalar>& q1, 
+    const Eigen::Quaternion<Scalar>& q2, 
+    int numPoints) {
+    
+    std::vector<Eigen::Quaternion<Scalar>> result;
+    result.reserve(numPoints + 2); // 预留空间，包括起点和终点
+    
+    
+    // 计算步长
+    Scalar step = 1.0 / (numPoints + 1);
+    
+    // 插入中间点
+    for (int i = 1; i <= numPoints; ++i) {
+        Scalar t = i * step;
+        // 使用Eigen的slerp进行球面线性插值
+        Eigen::Quaternion<Scalar> q_interp = q1.slerp(t, q2);
+        result.push_back(q_interp);
+    }
+    
+    return result;
+}
+
+template<typename Scalar>
+std::vector<Eigen::Vector<Scalar,3>> slerpInterpolation(
+    const Eigen::Vector<Scalar,3>& q1, 
+    const Eigen::Vector<Scalar,3>& q2, 
+    int numPoints) {
+    
+    std::vector<Eigen::Vector<Scalar,3>> result;
+    result.reserve(numPoints + 2); // 预留空间，包括起点和终点
+
+    for(int count = 1; count <= numPoints;count++)
+    {
+    result.emplace_back(q1 + (count / (double)(numPoints  + 1)) * (q2 - q1));
+    }
+    return result;
+}
+
+std::vector<Pose> poseInterpolation(int num,Pose& q1,Pose& q2)
+{
+std::vector<Pose> poses;
+poses.reserve(num  + 2);
+auto orients = slerpInterpolation(q1.orientation,q2.orientation,num);
+auto trans = slerpInterpolation(q1.translation,q2.translation,num);
+for(size_t id{0}; id < num; id++)
+    poses.emplace_back(Pose{trans[id],orients[id]});
+
+return poses;
+}
+
 Sampler::Sampler(StatusSpaceManager::UniquePtr& status_space_manager,const PlanProblem<double>& problem,
                  std::unique_ptr<CollisionDetector>& collision_detector,
                  std::shared_ptr<KinematicSolverBaseInterface> kinematic_solver,
@@ -57,17 +109,31 @@ return ;
 }
 }else{
 //采样策略，如何配合状态空间进行高效的启发式生长
+bool flag{false};
 Pose random_pose = sample();
 auto node = searchNearestNode(random_pose.translation);
 double len = (random_pose.translation - node->pose.translation).norm();
 random_pose.translation = node->pose.translation + (random_pose.translation - node->pose.translation ) * (step_ / len);
 auto result  = isFreeCollision(random_pose);
 if(std::get<0>(result)){
-status_space_manager_->update(random_pose.translation,true);
 auto random_node = std::get<1>(result);
+// 插值检测，默认分为插入两个点
+auto temp_poses = poseInterpolation(2,node->pose, random_node->pose);
+for(auto& temp_pose:temp_poses)
+{
+auto temp_result = isFreeCollision(temp_pose);
+if(!std::get<0>(temp_result))
+{
+   flag = true;
+   break;
+}
+}
+if(!flag){
+status_space_manager_->update(random_pose.translation,true);
 random_node->parent = node;
 tree_.emplace_back(random_node);
 update_nearest_node(random_node);
+}else delete random_node;
 }else status_space_manager_->update(random_pose.translation,false);
 }
 ++iter_count;

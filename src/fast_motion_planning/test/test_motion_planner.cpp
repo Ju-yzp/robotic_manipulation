@@ -51,8 +51,8 @@ ur5e_kinematic_solver->update_envelopes_position(start_thetas);
 
 Eigen::Matrix4d target_pose;
 
-target_pose << 1.0f,0.0f,0.0f,100.0f,
-               0.0f,1.0f,0.0f,-100.0f,
+target_pose << 1.0f,0.0f,0.0f,400.0f,
+               0.0f,1.0f,0.0f,-700.0f,
                0.0f,0.0f,1.0f,500.0f,
                0.0f,0.0f,0.0f,1.0f;
 fmp::PlanProblem<double> problem(ur5e_kinematic_solver->get_endeffector_pose(start_thetas),
@@ -83,7 +83,7 @@ std::unique_ptr<fmp::StatusSpaceManager> status_space_manager = std::make_unique
 
 // 采样器（其实行为更像规划器）
 std::unique_ptr<fmp::Sampler> sampler = std::make_unique<fmp::Sampler>(status_space_manager,problem,collision_detector,
-                                                                       std::dynamic_pointer_cast<fmp::KinematicSolverBaseInterface>(ur5e_kinematic_solver),40.0,80000);
+                                                                       std::dynamic_pointer_cast<fmp::KinematicSolverBaseInterface>(ur5e_kinematic_solver),30.0,80000);
 
 
 //权重函数
@@ -209,7 +209,7 @@ while (!glfwWindowShouldClose(window) && flag) {
      mjr_render(viewport, &mujoco_resource::scn, &mujoco_resource::con);
     glfwSwapBuffers(window);
     glfwPollEvents();
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     flag = false;
 }

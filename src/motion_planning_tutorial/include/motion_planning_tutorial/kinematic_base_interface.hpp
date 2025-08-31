@@ -1,3 +1,9 @@
+/*
+Description: KinematicBaseInterface: a pure virtual base class for kinematic interfaces
+Author: Jup
+email: Jup230551@outlook.com
+*/
+
 #ifndef MOTION_PLANNING_TOTURIAL_KINEMATIC_BASE_INTERFACE_HPP_
 #define MOTION_PLANNING_TOTURIAL_KINEMATIC_BASE_INTERFACE_HPP_
 

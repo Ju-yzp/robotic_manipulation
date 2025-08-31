@@ -15,8 +15,15 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(yaml-cpp REQUIRED)
 find_package(Eigen3 3.3 REQUIRED)
+find_package(PCL 1.8 REQUIRED)
 
 add_library(robot_description src/robot_description.cpp)
+add_library(ikd_Tree src/ikd_Tree.cpp)
+
+target_include_directories(
+  ikd_Tree PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
+
+target_link_libraries(ikd_Tree PUBLIC ${PCL_LIBRARIES})
 
 target_include_directories(
   robot_description PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)

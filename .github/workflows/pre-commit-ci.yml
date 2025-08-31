@@ -1,0 +1,112 @@
+name: Pre-Commit CI Check
+# 触发条件：推送到主分支、PR到主分支（仅监听C++/CMake等核心文件变更）
+on:
+  push:
+    branches: [ main, master ]  # 替换为项目实际主分支名
+    paths:
+      - '**.h'
+      - '**.hh'
+      - '**.hxx'
+      - '**.hpp'
+      - '**.c'
+      - '**.cc'
+      - '**.cpp'
+      - '**.cxx'
+      - 'CMakeLists.txt'
+      - '**.cmake'
+      - '**.yml'
+      - '**.yaml'
+      - '.pre-commit-config.yaml'  # pre-commit配置变更时也触发检查
+  pull_request:
+    branches: [ main, master ]
+    paths:  # 与push保持一致，减少无效执行
+      - '**.h'
+      - '**.hh'
+      - '**.hxx'
+      - '**.hpp'
+      - '**.c'
+      - '**.cc'
+      - '**.cpp'
+      - '**.cxx'
+      - 'CMakeLists.txt'
+      - '**.cmake'
+      - '**.yml'
+      - '**.yaml'
+      - '.pre-commit-config.yaml'
+
+# 并发控制：同一PR/push取消旧任务，避免资源浪费
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pre-commit-check:
+    name: Run Pre-Commit Hooks
+    runs-on: ubuntu-latest  # Ubuntu环境稳定且工具安装便捷
+    steps:
+      ##########################################################################
+      # 1. 拉取仓库代码（必须第一步，后续步骤依赖代码文件）
+      ##########################################################################
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1  # 仅拉取最新提交，加速执行
+
+      ##########################################################################
+      # 2. 安装cppcheck（系统级工具，通过apt安装，需验证安装结果）
+      ##########################################################################
+      - name: Install and verify cppcheck
+        run: |
+          sudo apt update -y  # 强制更新包列表，避免旧源找不到工具
+          sudo apt install -y cppcheck
+          which cppcheck  # 验证工具路径（成功则输出/usr/bin/cppcheck）
+          cppcheck --version  # 验证工具可用（输出版本号如cppcheck 2.9）
+
+      ##########################################################################
+      # 3. 配置Python环境（pre-commit依赖Python，禁用pip缓存避免报错）
+      ##########################################################################
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'  # 稳定版本，兼容所有pre-commit钩子
+          cache: ''  # 禁用pip缓存（项目无requirements.txt，避免找不到文件报错）
+
+      ##########################################################################
+      # 4. 安装pre-commit+cpplint，配置PATH确保工具可找到
+      ##########################################################################
+      - name: Install dependencies and configure PATH
+        run: |
+          # 升级pip并安装工具
+          python -m pip install --upgrade pip
+          pip install pre-commit cpplint  # 同时安装pre-commit和cpplint
+
+          # 关键：将pip安装的工具路径（~/.local/bin）加入系统PATH
+          # （GitHub Action默认不包含此路径，不配置会找不到cpplint）
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+          # 验证工具安装（失败则CI直接报错，方便定位）
+          which pre-commit  # 输出/home/runner/.local/bin/pre-commit
+          which cpplint     # 输出/home/runner/.local/bin/cpplint
+          cpplint --version # 输出版本号如cpplint 1.6.1
+
+      ##########################################################################
+      # 5. 缓存pre-commit钩子依赖（避免每次重新下载clang-format等工具）
+      ##########################################################################
+      - name: Cache pre-commit dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pre-commit  # pre-commit默认缓存目录
+          # 缓存键：配置文件变更时更新缓存，否则复用旧缓存
+          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: pre-commit-  # 无匹配键时，复用最近的pre-commit缓存
+
+      ##########################################################################
+      # 6. 执行所有pre-commit钩子（全量检查，确保所有文件符合规范）
+      ##########################################################################
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files
+        env:
+          # 可选：禁用某些耗时检查（如需临时跳过cppcheck，可添加此环境变量）
+          # SKIP: cppcheck
+          # 可选：强制颜色输出（便于CI日志查看）
+          TERM: xterm-256color

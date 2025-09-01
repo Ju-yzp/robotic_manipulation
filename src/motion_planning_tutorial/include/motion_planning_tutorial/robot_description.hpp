@@ -1,3 +1,8 @@
+/*
+Description: RobotDescription: a class for describing robot consisting of kinematic interface, joint
+limits, and envelopes Author: Jup email: Jup230551@outlook.com
+*/
+
 #ifndef MOTION_PLANNING_TOTURIAL_ROBOT_DESCRIPTION_HPP_
 #define MOTION_PLANNING_TOTURIAL_ROBOT_DESCRIPTION_HPP_
 
@@ -47,6 +52,9 @@ public:
 
     // 判断是否超过关节位置约束
     bool isOverJointPositionLimit(double joint_position, const std::string& joint_name);
+
+    // 获取关节约束
+    const JointLimit get_jointlimit(const std::string& joint_name);
 
 private:
     struct EnvelopeGroup {  // 包络体组，是位于同一个关节下的

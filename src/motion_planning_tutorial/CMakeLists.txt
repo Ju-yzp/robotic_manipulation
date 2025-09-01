@@ -13,9 +13,14 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(sensor_msgs REQUIRED)
+# find_package(pcl_ros REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(Eigen3 3.3 REQUIRED)
 find_package(PCL 1.8 REQUIRED)
+find_package(pcl_conversions REQUIRED)
 
 add_library(robot_description src/robot_description.cpp)
 add_library(ikd_Tree src/ikd_Tree.cpp)
@@ -30,20 +35,35 @@ target_include_directories(
 
 target_link_libraries(robot_description PUBLIC Eigen3::Eigen)
 
-set(TEST_DIR "${PROJECT_SOURCE_DIR}/test")
+add_executable(test_collision_detector test/test_collision_detector.cpp)
 
-file(GLOB cpp_files "${TEST_DIR}/*.cpp")
+ament_target_dependencies(
+  test_collision_detector rclcpp sensor_msgs
+  # pcl_ros
+  pcl_conversions)
 
-foreach(cpp_file ${cpp_files})
-  get_filename_component(PREFIX ${cpp_file} NAME_WE)
-  set(FILE_PREFIX ${PREFIX})
+target_link_libraries(test_collision_detector robot_description ikd_Tree
+                      yaml-cpp ${PCL_LIBRARIES})
 
-  add_executable(${FILE_PREFIX} ${cpp_file})
+install(
+  TARGETS robot_description ikd_Tree test_collision_detector
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin)
 
-  target_include_directories(
-    ${FILE_PREFIX} PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
+ament_package()
+# set(TEST_DIR "${PROJECT_SOURCE_DIR}/test")
 
-  target_link_libraries(${FILE_PREFIX} PRIVATE robot_description yaml-cpp)
+# file(GLOB cpp_files "${TEST_DIR}/*.cpp")
 
-  install(TARGETS ${FILE_PREFIX} DESTINATION lib/${PROJECT_NAME})
-endforeach()
+# foreach(cpp_file ${cpp_files}) get_filename_component(PREFIX ${cpp_file}
+# NAME_WE) set(FILE_PREFIX ${PREFIX})
+
+# add_executable(${FILE_PREFIX} ${cpp_file})
+
+# target_include_directories( ${FILE_PREFIX} PRIVATE
+# $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
+
+# target_link_libraries(${FILE_PREFIX} PRIVATE robot_description yaml-cpp)
+
+# install(TARGETS ${FILE_PREFIX} DESTINATION lib/${PROJECT_NAME}) endforeach()

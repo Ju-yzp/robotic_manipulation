@@ -127,5 +127,14 @@ bool RobotDescription::isOverJointPositionLimit(
         joint_position > joint_limit.joint_position_upper ||
         joint_position < joint_limit.joint_position_lower);
 }
+
+const RobotDescription::JointLimit RobotDescription::get_jointlimit(const std::string& joint_name) {
+    if (jointlimit_group_.jointlimit_map.find(joint_name) ==
+        jointlimit_group_.jointlimit_map.end()) {
+        std::cerr << "Joint name not found: " << joint_name << std::endl;
+        return JointLimit{};  // 返回一个默认的JointLimit对象
+    }
+    return jointlimit_group_.jointlimit_map.at(joint_name);
+}
 }  // namespace motion_planning_tutorial
 // #include "motion_planning_tutorial/robot_description.hpp"

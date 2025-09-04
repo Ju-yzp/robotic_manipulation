@@ -31,22 +31,23 @@ target_include_directories(
 target_link_libraries(ikd_Tree PUBLIC ${PCL_LIBRARIES})
 
 target_include_directories(
-  robot_description PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
+  robot_description PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
 
 target_link_libraries(robot_description PUBLIC Eigen3::Eigen)
 
-add_executable(test_collision_detector test/test_collision_detector.cpp)
+add_executable(test_ur5e_kinematic test/test_ur5e_kinematic.cpp
+                                   src/ur5e_kinematic.cpp)
 
 ament_target_dependencies(
-  test_collision_detector rclcpp sensor_msgs
+  test_ur5e_kinematic rclcpp sensor_msgs
   # pcl_ros
   pcl_conversions)
 
-target_link_libraries(test_collision_detector robot_description ikd_Tree
-                      yaml-cpp ${PCL_LIBRARIES})
+target_link_libraries(test_ur5e_kinematic robot_description ikd_Tree yaml-cpp
+                      ${PCL_LIBRARIES})
 
 install(
-  TARGETS robot_description ikd_Tree test_collision_detector
+  TARGETS robot_description ikd_Tree test_ur5e_kinematic
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)

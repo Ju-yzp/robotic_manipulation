@@ -86,7 +86,7 @@ void RobotDescription::parse_configuration_file(const std::string& configuration
 }
 
 void RobotDescription::update_envelopes_position(const State& state) {
-    auto transforms = kinematic_interface_->fowardKinematic(state);
+    auto transforms = kinematic_interface_->forwardKinematic(state);
     auto& envelope_map = envelope_group_.envelope_map_;
     for (const auto& transform : transforms) {
         const std::string& joint_name = transform.first;

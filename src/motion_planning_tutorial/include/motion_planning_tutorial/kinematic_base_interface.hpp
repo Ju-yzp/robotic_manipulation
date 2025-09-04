@@ -30,7 +30,7 @@ public:
     virtual std::vector<State> inverseKinematic(
         const Eigen::Isometry3d& goal_pose) = 0;  // 逆运动学接口
 
-    virtual std::unordered_map<std::string, Eigen::Isometry3d> fowardKinematic(
+    virtual std::unordered_map<std::string, Eigen::Isometry3d> forwardKinematic(
         const State& state) = 0;  // 正运动学接口
 };
 }  // namespace motion_planning_tutorial

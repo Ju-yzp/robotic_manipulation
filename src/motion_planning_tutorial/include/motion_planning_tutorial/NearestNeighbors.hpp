@@ -16,56 +16,62 @@ Author: Jup email: Jup230551@outlook.com
 namespace motion_planning_tutorial {
 
 template <typename T>
-class NearestNeighbors{
+class NearestNeighbors {
 public:
-void add(T* element = nullptr){
-    data_.emplace_back(element); }
+    void add(T* element = nullptr) { data_.emplace_back(element); }
 
-T* searchNearestNeighbor(T* element){
-double distance = std::numeric_limits<double>::infinity();
-T *nearestNeighbor = nullptr;
-for(const auto& d:data_){
-assert(d->state.rows() == element->state.rows());
-double dist = ( d->state.positions - element->state.positions ).norm();
-if(dist < distance){
-    distance = dist;
-    nearestNeighbor = d; } }
-return nearestNeighbor;
-}
+    T* searchNearestNeighbor(T* element) {
+        double distance = std::numeric_limits<double>::infinity();
+        T* nearestNeighbor = nullptr;
+        for (const auto& d : data_) {
+            assert(d->state.rows() == element->state.rows());
+            double dist = (d->state.positions - element->state.positions).norm();
+            if (dist < distance) {
+                distance = dist;
+                nearestNeighbor = d;
+            }
+        }
+        return nearestNeighbor;
+    }
 
-std::vector<T *> searchNearestNeighborWithRadius(const double radius,T *element){
-std::vector<T *> elements;
-std::for_each(data_.begin(),data_.end(),[&](auto a){
-double dist = ( a->state.positions - element->state.positions ).norm();
-if(dist < radius * radius) elements.emplace_back(a);
-});
-return elements;
-}
+    std::vector<T*> searchNearestNeighborWithRadius(const double radius, T* element) {
+        std::vector<T*> elements;
+        std::for_each(data_.begin(), data_.end(), [&](auto a) {
+            double dist = (a->state.positions - element->state.positions).norm();
+            if (dist < radius * radius) elements.emplace_back(a);
+        });
+        return elements;
+    }
 
-std::vector<T *> serachKNearestNeighbors(const int k,T *element){
-std::vector<T *> elements;
-elements.resize(k + 1);
-std::sort(data_.begin(),data_.end(),[&](auto a,auto b){
-double dist_a = ( a->state.positions - element->state.positions ).norm();
-double dist_b = ( b->state.positions - element->state.positions ).norm();
-return dist_a < dist_b; });
+    std::vector<T*> serachKNearestNeighbors(const int k, T* element) {
+        std::vector<T*> elements;
+        elements.resize(k + 1);
+        std::sort(data_.begin(), data_.end(), [&](auto a, auto b) {
+            double dist_a = (a->state.positions - element->state.positions).norm();
+            double dist_b = (b->state.positions - element->state.positions).norm();
+            return dist_a < dist_b;
+        });
 
-size_t count = std::min(data_.size(),static_cast<size_t>(k));
-for(size_t i = 0;i < count;++i){
-    elements[i] = data_[i]; }
-}
+        size_t count = std::min(data_.size(), static_cast<size_t>(k));
+        for (size_t i = 0; i < count; ++i) {
+            elements[i] = data_[i];
+        }
+    }
 
-void relaseMemoryResource(){
-    for(auto& ptr:data_){
-        if(ptr){
-            delete ptr;
-            ptr = nullptr; } }
-    
-    data_.clear();
-}
+    void relaseMemoryResource() {
+        for (auto& ptr : data_) {
+            if (ptr) {
+                delete ptr;
+                ptr = nullptr;
+            }
+        }
+
+        data_.clear();
+    }
+
 private:
-// 数据集合
-std::vector<T *> data_;
+    // 数据集合
+    std::vector<T*> data_;
 };
 
 }  // namespace motion_planning_tutorial

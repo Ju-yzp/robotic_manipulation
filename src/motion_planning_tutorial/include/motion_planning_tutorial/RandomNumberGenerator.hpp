@@ -12,18 +12,16 @@ Author: Jup email: Jup230551@outlook.com
 namespace motion_planning_tutorial {
 class RangeNumberGenerator {
 public:
+    double uniform01() { return uniDist_(generator_); }
 
-double uniform01() { return uniDist_(generator_); }
-
-double uniform(const double lower, const double upper) {
-    return lower + (upper - lower) * uniform01();
-}
+    double uniform(const double lower, const double upper) {
+        return lower + (upper - lower) * uniform01();
+    }
 
 private:
+    std::mt19937 generator_;
 
-std::mt19937 generator_;
-
-std::uniform_real_distribution<> uniDist_{0,1};
+    std::uniform_real_distribution<> uniDist_{0, 1};
 };
-}
+}  // namespace motion_planning_tutorial
 #endif  // MOTION_PLANNING_TOTURIAL_RANGE_NUMBER_GENERATOR_HPP_

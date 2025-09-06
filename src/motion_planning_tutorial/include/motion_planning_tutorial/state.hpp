@@ -1,11 +1,12 @@
 #ifndef MOTION_PLANNING_TOTURIAL_STATE_HPP_
 #define MOTION_PLANNING_TOTURIAL_STATE_HPP_
 
-#include <vector>
+#include <Eigen/Eigen>
+
 namespace motion_planning_tutorial {
 
 struct State {
-    std::vector<double> positions;
+    Eigen::VectorXd positions;
 };
 }  // namespace motion_planning_tutorial
 

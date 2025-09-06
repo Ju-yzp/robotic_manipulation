@@ -35,19 +35,24 @@ target_include_directories(
 
 target_link_libraries(robot_description PUBLIC Eigen3::Eigen)
 
-add_executable(test_ur5e_kinematic test/test_ur5e_kinematic.cpp
-                                   src/ur5e_kinematic.cpp)
+# add_executable(test_ur5e_kinematic test/test_ur5e_kinematic.cpp
+# src/ur5e_kinematic.cpp)
 
-ament_target_dependencies(
-  test_ur5e_kinematic rclcpp sensor_msgs
-  # pcl_ros
-  pcl_conversions)
+# ament_target_dependencies( test_ur5e_kinematic rclcpp sensor_msgs # pcl_ros
+# pcl_conversions)
 
-target_link_libraries(test_ur5e_kinematic robot_description ikd_Tree yaml-cpp
-                      ${PCL_LIBRARIES})
+# target_link_libraries(test_ur5e_kinematic robot_description ikd_Tree yaml-cpp
+# ${PCL_LIBRARIES})
 
+add_executable(test_nearestNeighbors test/test_nearestNeighbors.cpp)
+
+target_include_directories(
+  test_nearestNeighbors
+  PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
+
+target_link_libraries(test_nearestNeighbors PRIVATE Eigen3::Eigen)
 install(
-  TARGETS robot_description ikd_Tree test_ur5e_kinematic
+  TARGETS robot_description ikd_Tree test_nearestNeighbors
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)

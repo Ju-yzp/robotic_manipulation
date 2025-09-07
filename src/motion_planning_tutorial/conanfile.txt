@@ -1,8 +1,7 @@
 
 [requires]
-tinyspline/0.6.0  
+tinyspline/0.6.0
 
 [generators]
 CMakeDeps
 CMakeToolchain
-

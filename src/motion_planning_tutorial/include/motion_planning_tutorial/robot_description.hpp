@@ -47,6 +47,8 @@ public:
     // 更新包络体在机械臂基座坐标系下的位置
     void update_envelopes_position(const State& state);
 
+    const std::vector<Envelope> get_envelope(const std::string name);
+
     // 判断是否超过关节角速度约束
     bool isOverJointVelocityLimit(double joint_velocity, const std::string& joint_name);
 

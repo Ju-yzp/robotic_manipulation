@@ -25,7 +25,7 @@ int main() {
     Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
     std::cout << nearest->state.positions.format(CleanFmt) << std::endl;
 
-    auto nearests = nn.searchNearestNeighborWithRadius(10.0, &n4);
+    auto nearests = nn.searchNearestNeighborsWithRadius(10.0, &n4);
     for (const auto& n : nearests) {
         std::cout << n->state.positions.format(CleanFmt) << std::endl;
     }

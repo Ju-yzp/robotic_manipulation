@@ -17,9 +17,9 @@ Author: Jup email: Jup230551@outlook.com
 namespace motion_planning_tutorial {
 
 using Ur5eParam = std::array<double, 6>;
-class Ur5eKInematic : virtual public KinematicBaseInterface {
+class Ur5eKinematic : virtual public KinematicBaseInterface {
 public:
-    Ur5eKInematic(const Ur5eParam at, const Ur5eParam dt, const Ur5eParam apt, const Ur5eParam tht)
+    Ur5eKinematic(const Ur5eParam at, const Ur5eParam dt, const Ur5eParam apt, const Ur5eParam tht)
         : a_table_(at), d_table_(dt), alpha_table_(apt), theta_table_(tht) {}
 
     void set_id(const size_t id, const std::string joint_name) { id_map_[id] = joint_name; }

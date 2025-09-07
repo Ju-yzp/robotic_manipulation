@@ -39,6 +39,9 @@ public:
     // 设置初始路径
     void set_initial_path(const std::vector<State>& initial_path) { initial_path_ = initial_path; }
 
+    // 获取状态
+    const bool get_state() { return is_solved_; }
+
 private:
     State start_state_;  //  机械臂起始状态
 

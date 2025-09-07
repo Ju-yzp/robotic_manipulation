@@ -3,7 +3,7 @@
 #include <pcl/impl/point_types.hpp>
 
 namespace motion_planning_tutorial {
-bool CollisionDetector::isOccurCollision(const Eigen::Vector3d& center, const double radius) {
+bool CollisionDetector::isOccurCollision(const Eigen::Vector4d& center, const double radius) {
     // 暂时是通过搜寻以center为中心，raius为半径形成的球范围内的所有点云，然后如果有点云存在，就返回true
     // 后期会修改ikd-Tree,引进点云稀疏化与线性存储，降低内存使用，提高缓存命中率
 

@@ -34,7 +34,7 @@ public:
         return nearestNeighbor;
     }
 
-    std::vector<T*> searchNearestNeighborWithRadius(const double radius, T* element) {
+    std::vector<T*> searchNearestNeighborsWithRadius(const double radius, T* element) {
         std::vector<T*> elements;
         std::for_each(data_.begin(), data_.end(), [&](auto a) {
             double dist = (a->state.positions - element->state.positions).norm();

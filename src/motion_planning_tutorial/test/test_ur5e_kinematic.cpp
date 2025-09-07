@@ -18,8 +18,8 @@ int main() {
     mpt::Ur5eParam d_table{163.0, 134.0, 0.0, 0.0, -100.0, 100.0};
     mpt::Ur5eParam alpha_table{0.0, -M_PI / 2.0, 0.0, 0.0, M_PI / 2.0, -M_PI / 2.0};
     mpt::Ur5eParam theta_table{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    std::shared_ptr<mpt::Ur5eKInematic> ur5e_kinematic =
-        std::make_shared<mpt::Ur5eKInematic>(a_table, d_table, alpha_table, theta_table);
+    std::shared_ptr<mpt::Ur5eKinematic> ur5e_kinematic =
+        std::make_shared<mpt::Ur5eKinematic>(a_table, d_table, alpha_table, theta_table);
 
     ur5e_kinematic->set_id(0, "shoulder_pan");
     ur5e_kinematic->set_id(1, "shoulder_lift");

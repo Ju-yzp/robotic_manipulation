@@ -16,7 +16,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
-# find_package(pcl_ros REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(Eigen3 3.3 REQUIRED)
 find_package(PCL 1.8 REQUIRED)
@@ -33,7 +32,7 @@ target_link_libraries(ikd_Tree PUBLIC ${PCL_LIBRARIES})
 target_include_directories(
   robot_description PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
 
-target_link_libraries(robot_description PUBLIC Eigen3::Eigen)
+target_link_libraries(robot_description PUBLIC Eigen3::Eigen yaml-cpp)
 
 # add_executable(test_ur5e_kinematic test/test_ur5e_kinematic.cpp
 # src/ur5e_kinematic.cpp)
@@ -44,15 +43,16 @@ target_link_libraries(robot_description PUBLIC Eigen3::Eigen)
 # target_link_libraries(test_ur5e_kinematic robot_description ikd_Tree yaml-cpp
 # ${PCL_LIBRARIES})
 
-add_executable(test_nearestNeighbors test/test_nearestNeighbors.cpp)
+add_executable(test_planner test/test_planner.cpp src/ur5e_kinematic.cpp
+                            src/collision_detector.cpp src/planner.cpp)
 
 target_include_directories(
-  test_nearestNeighbors
-  PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
+  test_planner PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
 
-target_link_libraries(test_nearestNeighbors PRIVATE Eigen3::Eigen)
+target_link_libraries(test_planner PRIVATE Eigen3::Eigen robot_description
+                                           ikd_Tree)
 install(
-  TARGETS robot_description ikd_Tree test_nearestNeighbors
+  TARGETS robot_description ikd_Tree test_planner
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)

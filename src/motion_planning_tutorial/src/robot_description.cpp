@@ -100,6 +100,15 @@ void RobotDescription::update_envelopes_position(const State& state) {
     }
 }
 
+const std::vector<RobotDescription::Envelope> RobotDescription::get_envelope(
+    const std::string name) {
+    const auto& envelopes = envelope_group_.envelope_map_;
+    if (envelopes.find(name) == envelopes.end())
+        return std::vector<Envelope>();
+    else
+        return envelopes.at(name);
+}
+
 bool RobotDescription::isOverJointVelocityLimit(
     double joint_velocity, const std::string& joint_name) {
     if (jointlimit_group_.jointlimit_map.find(joint_name) ==

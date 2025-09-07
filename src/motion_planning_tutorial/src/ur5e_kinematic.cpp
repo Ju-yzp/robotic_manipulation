@@ -15,11 +15,11 @@ Eigen::Matrix4d frameTransform(float a, float d, float alpha, float theta) {
     return transform_matrix;
 }
 
-std::unordered_map<std::string, Eigen::Isometry3d> Ur5eKInematic::forwardKinematic(
+std::unordered_map<std::string, Eigen::Isometry3d> Ur5eKinematic::forwardKinematic(
     const State& state) {
     std::unordered_map<std::string, Eigen::Isometry3d> transforms;
 
-    assert(state.positions.size() == 6 && "State positions size must be 6 for Ur5eKInematic");
+    assert(state.positions.size() == 6 && "State positions size must be 6 for Ur5eKinematic");
 
     Eigen::Matrix4d transform_matrix = Eigen::Matrix4d::Identity();
     Eigen::Isometry3d transform;
@@ -33,7 +33,7 @@ std::unordered_map<std::string, Eigen::Isometry3d> Ur5eKInematic::forwardKinemat
     return transforms;
 }
 
-std::vector<State> Ur5eKInematic::inverseKinematic(const Eigen::Isometry3d& goal_pose) {
+std::vector<State> Ur5eKinematic::inverseKinematic(const Eigen::Isometry3d& goal_pose) {
     Eigen::Matrix4d goal_end_effector_pose = goal_pose.matrix();
     std::vector<Eigen::Vector<double, 6>> all_solutions;
     all_solutions.reserve(8);
@@ -114,7 +114,7 @@ std::vector<State> Ur5eKInematic::inverseKinematic(const Eigen::Isometry3d& goal
     return solutions;
 };
 
-void Ur5eKInematic::getFirstTheta(float A, float B, float C, float theta1[]) {
+void Ur5eKinematic::getFirstTheta(float A, float B, float C, float theta1[]) {
     float delta = pow(A, 2) + pow(B, 2) - pow(C, 2);
 
     // 公用部分
@@ -156,7 +156,7 @@ void Ur5eKInematic::getFirstTheta(float A, float B, float C, float theta1[]) {
     }
 }
 
-void Ur5eKInematic::getWristThetas(const Eigen::Matrix4d pose, float* wrist_solution) {
+void Ur5eKinematic::getWristThetas(const Eigen::Matrix4d pose, float* wrist_solution) {
     if (pow(pose(1, 2), 2) < 1E-3) {
         wrist_solution[0] = atan2(pose(2, 2), -pose(0, 2));
         wrist_solution[1] = M_PIf / 2.0f;
@@ -190,7 +190,7 @@ void Ur5eKInematic::getWristThetas(const Eigen::Matrix4d pose, float* wrist_solu
     }
 }
 
-bool Ur5eKInematic::getArmThetas(
+bool Ur5eKinematic::getArmThetas(
     float total_theta, std::vector<std::array<float, 3>>& arm_solutions, Eigen::Matrix4d& pose) {
     float new_x = pose(0, 3) + sin(total_theta) * std::abs(d_table_[4]);
     float new_z = pose(2, 3) + cos(total_theta) * std::abs(d_table_[4]);
@@ -230,7 +230,7 @@ bool Ur5eKInematic::getArmThetas(
     return true;
 }
 
-Eigen::Isometry3d Ur5eKInematic::get_endeffector_pose(const State& state) {
+Eigen::Isometry3d Ur5eKinematic::get_endeffector_pose(const State& state) {
     Eigen::Isometry3d endeffector_pose = Eigen::Isometry3d::Identity();
     for (size_t id{0}; id < 6; id++) {
         endeffector_pose =

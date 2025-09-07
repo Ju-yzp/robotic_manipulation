@@ -38,6 +38,7 @@ void Planner::solve(
     if (solutions.empty()) {
         std::cerr << "Has no invalid goal solution" << std::endl;
         delete goal;
+        delete start;
     } else {
         std::cout << "Has " << solutions.size() << " valid goal solutions" << std::endl;
     }
@@ -85,6 +86,7 @@ void Planner::solve(
         auto node = nn_.searchNearestNeighbor(goal);
         if (distance(node->state, goal->state) < stop_threshold_) {
             pd.update_state(true);
+            std::cout << goal << std::endl;
             goal->parent = node;
             std::cout << "Find the path with " << count << " iterations" << std::endl;
             break;
@@ -95,17 +97,19 @@ void Planner::solve(
 
     // 获得原始路径，但是是目标姿态到达起始姿态
     std::vector<State> initial_path;
-    while (!lastest_solution) {
-        initial_path.emplace_back(lastest_solution->state);
-        lastest_solution = lastest_solution->parent;
+    while (goal) {
+        // std::cout<<goal<<std::endl;
+        initial_path.emplace_back(goal->state);
+        goal = goal->parent;
     }
+
+    // std::cout<<(int)(initial_path.size())<<std::endl;
 
     // 翻转路径
     std::vector<State> reverse_path;
-    reverse_path.reserve(initial_path.size());
-    for (size_t start = initial_path.size() - 1; start >= 0; --start) {
-        reverse_path.emplace_back(initial_path[start]);
-    }
+    reverse_path.reserve(initial_path.size() + 2);
+    for (int id = initial_path.size() - 1; id >= 0; --id)
+        reverse_path.emplace_back(initial_path[id]);
 
     // 保存路径
     pd.set_initial_path(reverse_path);
@@ -144,7 +148,6 @@ State Planner::goalSample(State goal_state) {
 }
 
 bool Planner::checkMotion(State st, State dt) {  // 对状态之间进行插值，然后检查中途是否发生碰撞
-
     return true;
 }
 }  // namespace motion_planning_tutorial

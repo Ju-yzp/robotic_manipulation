@@ -45,7 +45,7 @@ int main() {
         std::make_unique<mpt::CollisionDetector>(kd_tree_);
 
     // 规划器
-    mpt::Planner planner(robot_description, ur5e_kinematic, collision_detector, 0.05, 0.01);
+    mpt::Planner planner(robot_description, ur5e_kinematic, collision_detector);
     planner.set_id_and_name(0, "shoulder_pan");
     planner.set_id_and_name(1, "shoulder_lift");
     planner.set_id_and_name(2, "elbow");

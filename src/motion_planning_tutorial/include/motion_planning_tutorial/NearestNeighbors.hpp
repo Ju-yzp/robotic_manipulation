@@ -19,7 +19,7 @@ namespace motion_planning_tutorial {
 template <typename T>
 class NearestNeighbors {
 public:
-    void add(T* element = nullptr) { data_.emplace_back(element); }
+    void add(T* element) { data_.emplace_back(element); }
 
     T* searchNearestNeighbor(T* element) {
         double distance = std::numeric_limits<double>::infinity();
@@ -34,6 +34,8 @@ public:
         }
         return nearestNeighbor;
     }
+
+    std::size_t size() { return data_.size(); }
 
     std::vector<T*> searchNearestNeighborsWithRadius(const double radius, T* element) {
         std::vector<T*> elements;

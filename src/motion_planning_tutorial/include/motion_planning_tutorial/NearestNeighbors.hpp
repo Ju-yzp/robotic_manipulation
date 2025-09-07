@@ -1,6 +1,7 @@
 /*
 Description: NearestNeighbors: a class for describing nearest neighbors search
-Author: Jup email: Jup230551@outlook.com
+Author: Jup
+email: Jup230551@outlook.com
 */
 
 #ifndef MOTION_PLANNING_TOTURIAL_NEARESTNEIGHBORS_HPP_

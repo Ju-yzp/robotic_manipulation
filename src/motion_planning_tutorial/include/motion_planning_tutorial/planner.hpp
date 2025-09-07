@@ -1,6 +1,7 @@
 /*
 Description: Planner: a class for describing motion planner interface
-Author: Jup email: Jup230551@outlook.com
+Author: Jup
+email: Jup230551@outlook.com
 */
 
 #ifndef MOTION_PLANNING_TOTURIAL_PLANNER_HPP_

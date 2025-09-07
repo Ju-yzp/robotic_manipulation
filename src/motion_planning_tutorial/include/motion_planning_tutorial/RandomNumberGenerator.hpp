@@ -1,6 +1,7 @@
 /*
 Description: RangeNumberGenerator: a class for generating random numbers within a specified range
-Author: Jup email: Jup230551@outlook.com
+Author: Jup
+email: Jup230551@outlook.com
 */
 
 #ifndef MOTION_PLANNING_TOTURIAL_RANGE_NUMBER_GENERATOR_HPP_

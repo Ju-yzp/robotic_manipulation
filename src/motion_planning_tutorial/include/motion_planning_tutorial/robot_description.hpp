@@ -1,6 +1,7 @@
 /*
 Description: RobotDescription: a class for describing robot consisting of kinematic interface, joint
-Author: Jup email: Jup230551@outlook.com
+Author: Jup
+email: Jup230551@outlook.com
 */
 
 #ifndef MOTION_PLANNING_TOTURIAL_ROBOT_DESCRIPTION_HPP_

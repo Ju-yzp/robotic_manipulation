@@ -1,6 +1,7 @@
 /*
 Description: Ur5eKinametic: a class for describing ur5e robot kinematic interface
-Author: Jup email: Jup230551@outlook.com
+Author: Jup
+email: Jup230551@outlook.com
 */
 
 #ifndef MOTION_PLANNING_TOTURIAL_UR5E_KINEMATIC_HPP_

@@ -42,6 +42,8 @@ public:
     // 获取状态
     const bool get_state() { return is_solved_; }
 
+    const std::vector<State>& get_initial_path() const { return initial_path_; }
+
 private:
     State start_state_;  //  机械臂起始状态
 

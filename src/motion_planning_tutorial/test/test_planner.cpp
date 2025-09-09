@@ -1,16 +1,18 @@
+// motion_planning_tutorial
 #include <motion_planning_tutorial/collision_detector.hpp>
+#include <motion_planning_tutorial/controller.hpp>
 #include <motion_planning_tutorial/planner.hpp>
 #include <motion_planning_tutorial/problemDefinition.hpp>
 #include <motion_planning_tutorial/robot_description.hpp>
 #include <motion_planning_tutorial/ur5e_kinematic.hpp>
-
+// cpp
 #include <iostream>
 
 int main() {
     namespace mpt = motion_planning_tutorial;
     // 先定义规划问题
     Eigen::Vector<double, 6> start_positions;
-    start_positions << 0.8, -0.4, -0.2, 1.0, 2.0, 3.0;
+    start_positions << 0.8, -0.4, -0.2, 1.0, 1.0, -2.0;
     mpt::State start_state;
     start_state.positions = start_positions;
     Eigen::Isometry3d goal_state = Eigen::Isometry3d::Identity();
@@ -55,5 +57,22 @@ int main() {
 
     planner.solve(pd);
 
-    if (!pd.get_state()) std::cout << "Failed to solve the planning problem." << std::endl;
+    if (pd.get_state()) std::cout << "Succeful to solve the planning problem." << std::endl;
+
+    // for(const auto& state: pd.get_initial_path())
+    //     std::cout<<state.positions.transpose()<<std::endl;
+
+    mpt::Controller controller(robot_description);
+    controller.set_id_and_name(0, "shoulder_pan");
+    controller.set_id_and_name(1, "shoulder_lift");
+    controller.set_id_and_name(2, "elbow");
+    controller.set_id_and_name(3, "wrist_1_link");
+    controller.set_id_and_name(4, "wrist_2_link");
+    controller.set_id_and_name(5, "wrist_3_link");
+
+    auto timepoint = controller.set_initial_time_point(pd);
+    controller.smoothPath(pd, timepoint, mpt::SmoothType::BASIC_SPLINE);
+    // std::cout<<"Size is" <<(int)timepoint.size()<<std::endl;
+    // for(const auto time:timepoint)
+    //     std::cout<<time<<std::endl;
 }

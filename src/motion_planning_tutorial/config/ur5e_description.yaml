@@ -1,10 +1,12 @@
 robot_params:
      - joint: "shoulder_pan"
        type: "revolute"
-       position_upper: 1.57
-       position_lower: -1.57
-       velocity_upper: 0.3
-       velocity_lower: -0.3
+       position_upper: 3.14159
+       position_lower: -3.14159
+       velocity_upper: 1.57
+       velocity_lower: -1.57
+       angular_acceleration_upper: 0.0
+       angular_acceleration_lower: 0.0
        envelope_positions:
        - [0.0,0.0,0.0]
        envelope_radius:
@@ -12,10 +14,12 @@ robot_params:
 
      -  joint: "shoulder_lift"
         type: "revolute"
-        position_upper: 1.57
-        position_lower: -1.57
-        velocity_upper: 0.3
-        velocity_lower: -0.3
+        position_upper: 3.14159
+        position_lower: -3.14159
+        velocity_upper: 1.57
+        velocity_lower: -1.57
+        angular_acceleration_upper: 0.0
+        angular_acceleration_lower: 0.0
         envelope_positions:
         - [0.0,0.0,0.0]
         - [110.0,0.0,0.0]
@@ -33,8 +37,10 @@ robot_params:
         type: "revolute"
         position_upper: 1.57
         position_lower: -1.57
-        velocity_upper: 0.3
-        velocity_lower: -0.3
+        velocity_upper: 1.57
+        velocity_lower: -1.57
+        angular_acceleration_upper: 0.0
+        angular_acceleration_lower: 0.0
         envelope_positions:
         - [10.0,0.0,-115.0]
         - [110.0,0.0,-134.0]
@@ -50,10 +56,12 @@ robot_params:
 
      -  joint: "wrist_1_link"
         type: "revolute"
-        position_upper: 1.57
-        position_lower: -1.57
-        velocity_upper: 0.3
-        velocity_lower: -0.3
+        position_upper: 3.14159
+        position_lower: -3.14159
+        velocity_upper: 1.57
+        velocity_lower: -1.57
+        angular_acceleration_upper: 0.0
+        angular_acceleration_lower: 0.0
         envelope_positions:
         - [0.0,6.0,-10.0]
         envelope_radius:
@@ -61,10 +69,12 @@ robot_params:
 
      -  joint: "wrist_2_link"
         type: "revolute"
-        position_upper: 1.57
-        position_lower: -1.57
-        velocity_upper: 0.3
-        velocity_lower: -0.3
+        position_upper: 3.14159
+        position_lower: -3.14159
+        velocity_upper: 1.57
+        velocity_lower: -1.57
+        angular_acceleration_upper: 0.0
+        angular_acceleration_lower: 0.0
         envelope_positions:
         - [0.0,-4.0,-10.0]
         envelope_radius:
@@ -72,8 +82,10 @@ robot_params:
 
      -  joint: "wrist_3_link"
         type: "revolute"
-        position_upper: 1.57
-        position_lower: -1.57
+        position_upper: 3.14159
+        position_lower: -3.14159
+        angular_acceleration_upper: 1.57
+        angular_acceleration_lower: -1.57
         velocity_upper: 0.3
         velocity_lower: -0.3
         envelope_positions:

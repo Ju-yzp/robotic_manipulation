@@ -17,9 +17,11 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
-find_package(Eigen3 3.3 REQUIRED)
-find_package(PCL 1.8 REQUIRED)
+find_package(Eigen3 REQUIRED)
+find_package(PCL REQUIRED)
 find_package(pcl_conversions REQUIRED)
+
+find_package(tinyspline)
 
 add_library(robot_description src/robot_description.cpp)
 add_library(ikd_Tree src/ikd_Tree.cpp)
@@ -30,7 +32,8 @@ target_include_directories(
 target_link_libraries(ikd_Tree PUBLIC ${PCL_LIBRARIES})
 
 target_include_directories(
-  robot_description PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
+  robot_description PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+                           ${Eigen3_INCLUDE_DIRS})
 
 target_link_libraries(robot_description PUBLIC Eigen3::Eigen yaml-cpp)
 
@@ -43,14 +46,23 @@ target_link_libraries(robot_description PUBLIC Eigen3::Eigen yaml-cpp)
 # target_link_libraries(test_ur5e_kinematic robot_description ikd_Tree yaml-cpp
 # ${PCL_LIBRARIES})
 
+add_library(controller src/controller.cpp)
+target_include_directories(
+  controller PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+                    ${tinyspline_INCLUDE_DIRS} ${Eigen3_INCLUDE_DIRS})
+
+target_link_libraries(controller PUBLIC ${tinyspline_LIBRARIES})
+
 add_executable(test_planner test/test_planner.cpp src/ur5e_kinematic.cpp
                             src/collision_detector.cpp src/planner.cpp)
 
 target_include_directories(
-  test_planner PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
+  test_planner PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+                       ${Eigen3_INCLUDE_DIRS})
 
 target_link_libraries(test_planner PRIVATE Eigen3::Eigen robot_description
-                                           ikd_Tree)
+                                           ikd_Tree controller)
+
 install(
   TARGETS robot_description ikd_Tree test_planner
   ARCHIVE DESTINATION lib

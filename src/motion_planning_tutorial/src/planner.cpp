@@ -86,7 +86,7 @@ void Planner::solve(
         auto node = nn_.searchNearestNeighbor(goal);
         if (distance(node->state, goal->state) < stop_threshold_) {
             pd.update_state(true);
-            std::cout << goal << std::endl;
+            // std::cout << goal << std::endl;
             goal->parent = node;
             std::cout << "Find the path with " << count << " iterations" << std::endl;
             break;

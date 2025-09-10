@@ -21,7 +21,9 @@ public:
         : robot_description_(robot_description) {}
 
     // 平滑路径:满足c0,c1,c2,c3连续性
-    void smoothPath(ProblemDefinition& pd, std::vector<double>& timepoint, const SmoothType type);
+    void smoothPath(
+        ProblemDefinition& pd, std::vector<double>& timepoint,
+        const SmoothType type = SmoothType::BASIC_SPLINE);
 
     std::vector<double> set_initial_time_point(const ProblemDefinition& pd);
 

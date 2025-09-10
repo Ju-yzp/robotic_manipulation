@@ -47,8 +47,9 @@ void RobotDescription::parse_configuration_file(const std::string& configuration
             JointLimit joint_limit;
             joint_limit.joint_position_upper = joint_information["position_upper"].as<double>();
             joint_limit.joint_position_lower = joint_information["position_lower"].as<double>();
-            joint_limit.joint_velocity_upper = joint_information["velocity_upper"].as<double>();
-            joint_limit.joint_velocity_lower = joint_information["velocity_lower"].as<double>();
+            joint_limit.joint_velocity = joint_information["velocity"].as<double>();
+            joint_limit.joint_angular_acceleration =
+                joint_information["angular_acceleration"].as<double>();
 
             jointlimit_group_.jointlimit_map[joint_name] =
                 joint_limit;  // 将关节约束信息存储到关节约束组中
@@ -118,9 +119,7 @@ bool RobotDescription::isOverJointVelocityLimit(
     }
     const auto& joint_limit = jointlimit_group_.jointlimit_map.at(joint_name);
 
-    return (
-        joint_velocity > joint_limit.joint_velocity_upper ||
-        joint_velocity < joint_limit.joint_velocity_lower);
+    return fabs(joint_velocity) > joint_limit.joint_velocity;
 }
 
 bool RobotDescription::isOverJointPositionLimit(

@@ -10,7 +10,7 @@ namespace motion_planning_tutorial {
 NonUniformBspline::NonUniformBspline(
     const Eigen::MatrixXd& control_points, const int order, const double& interval,
     const RobotDescription::SharedPtr& robot_description,
-    const std::unordered_map<size_t, const std::string>& id_map)
+    const std::unordered_map<size_t, std::string>& id_map)
     : control_points_(control_points),
       p_(order),
       n_(control_points.rows() - 1),
@@ -28,13 +28,18 @@ NonUniformBspline::NonUniformBspline(
             u_(i) = u_(i - 1) + interval_;
         }
     }
+
+    for (int i{0}; i < id_map_.size(); ++i) {
+        const auto joint_limit = robot_description_->get_jointlimit(id_map_[i]);
+        velocity_limit_.conservativeResize(velocity_limit_.size() + 1);
+        velocity_limit_(i) = joint_limit.joint_velocity;
+        acceleration_limit_.conservativeResize(acceleration_limit_.size() + 1);
+        acceleration_limit_(i) = joint_limit.joint_angular_acceleration;
+    }
 }
 
 bool NonUniformBspline::checkFeasiblity() {
     bool feasible{true};
-
-    Eigen::VectorXd velocity_limit_;
-    Eigen::VectorXd acceleration_limit_;
 
     Eigen::MatrixXd p = control_points_;
     const int dim = control_points_.cols();
@@ -70,9 +75,6 @@ bool NonUniformBspline::checkFeasiblity() {
 bool NonUniformBspline::reallocateTime() {
     bool feasible{true};
 
-    Eigen::VectorXd velocity_limit_;
-    Eigen::VectorXd acceleration_limit_;
-
     Eigen::MatrixXd p = control_points_;
     int dim = control_points_.cols();
 
@@ -92,7 +94,7 @@ bool NonUniformBspline::reallocateTime() {
                 double delta_t = time_new - time_ori;
                 double time_inc = delta_t / double(p_);
 
-                for (int k{i + 2}; j <= i + p_ + 1; ++k) u_(k) += double(p_ + 1 + i) * time_inc;
+                for (int k{i + 2}; k <= i + p_ + 1; ++k) u_(k) += double(p_ + 1 + i) * time_inc;
 
                 for (int k{i + p_ + 2}; k < u_.rows(); ++k) {
                     u_(k) += delta_t;
@@ -156,5 +158,16 @@ Eigen::MatrixXd NonUniformBspline::getDerivativeControlPoints() {
                      (u_(i + p_ + 1) - u_(i + 1));
     }
     return ctp;
+}
+
+double NonUniformBspline::getTimeSum() {
+    double tm, tmp;
+    getTimeSpan(tm, tmp);
+    return tmp - tm;
+}
+
+void NonUniformBspline::getTimeSpan(double& um, double& um_p) {
+    um = u_(p_);
+    um_p = u_(m_ - p_);
 }
 }  // namespace motion_planning_tutorial

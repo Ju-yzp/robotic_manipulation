@@ -13,7 +13,7 @@ namespace motion_planning_tutorial {
 void Controller::smoothPath(
     ProblemDefinition& pd, std::vector<double>& timepoint, const SmoothType type) {
     const auto path = pd.get_initial_path();
-    std::cout<<"Path length is "<<int(path.size())<<std::endl;
+    std::cout << "Path length is " << int(path.size()) << std::endl;
 
     const int n = path.size();
     Eigen::MatrixXd control_points(n, 6);
@@ -43,7 +43,7 @@ void Controller::smoothPath(
     non_uniform_bspline.set_knot(knot);
     non_uniform_bspline.set_has_acceleration_limit(true);
 
-    while (!non_uniform_bspline.checkFeasiblity() && !non_uniform_bspline.reallocateTime()){ 
+    while (!non_uniform_bspline.checkFeasiblity() && !non_uniform_bspline.reallocateTime()) {
         double timesum = non_uniform_bspline.getTimeSum();
         std::cout << "Time sum: " << timesum << std::endl;
     }
@@ -53,7 +53,8 @@ void Controller::smoothPath(
     // 采样，然后写入文件
     int max_sample_count = 16000;
     double time_step = timesum / double(max_sample_count);
-    //std::ofstream outFile("/home/up/motion_planning/python_tool/statistic_data.txt", std::ios::trunc);
+    // std::ofstream outFile("/home/up/motion_planning/python_tool/statistic_data.txt",
+    // std::ios::trunc);
     for (int i{0}; i < max_sample_count; i++) {
         Eigen::VectorXd sample_point = non_uniform_bspline.evaluateDeBoorT(time_step * i);
         std::ofstream outFile(

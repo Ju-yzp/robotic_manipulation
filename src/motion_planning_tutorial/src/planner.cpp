@@ -5,7 +5,6 @@
 
 // motion_planning_tutorial
 #include <motion_planning_tutorial/planner.hpp>
-#include "motion_planning_tutorial/state.hpp"
 
 namespace motion_planning_tutorial {
 
@@ -21,8 +20,13 @@ void Planner::solve(
         std::remove_if(
             solutions.begin(), solutions.end(),
             [this](const auto solution) {
+                // 检查是否超出关节限制
                 robot_description_->update_envelopes_position(solution);
                 for (auto& in : id_map_) {
+                    const auto jointlimit = robot_description_->get_jointlimit(in.second);
+                    if (solution.positions(in.first) > jointlimit.joint_position_upper ||
+                        solution.positions(in.first) < jointlimit.joint_position_lower)
+                        return true;
                     auto envelopes = robot_description_->get_envelope(in.second);
                     for (auto envelope : envelopes) {
                         if (collision_detector_->isOccurCollision(
@@ -36,9 +40,10 @@ void Planner::solve(
         solutions.end());
 
     if (solutions.empty()) {
-        std::cerr << "Has no invalid goal solution" << std::endl;
+        std::cout << "Has no invalid goal solution" << std::endl;
         delete goal;
         delete start;
+        return;
     } else {
         std::cout << "Has " << solutions.size() << " valid goal solutions" << std::endl;
     }
@@ -64,14 +69,14 @@ void Planner::solve(
 
         count++;
 
-        int num{3};
+        int num{2};
 
         const auto& st = nearest_node->state;
         const auto& dt = lastest_solution->state;
 
         if (checkMotion(st, dt, num)) {
             if (addIntermediateStates_) {
-                std::vector<State> states = interpolate(st, dt, num, 3);
+                std::vector<State> states = interpolate(st, dt, num, 2);
 
                 Node* last_node = lastest_solution;
                 for (size_t start = 1; start < states.size(); ++start) {
@@ -94,7 +99,6 @@ void Planner::solve(
         auto node = nn_.searchNearestNeighbor(goal);
         if (distance(node->state, goal->state) < stop_threshold_) {
             pd.update_state(true);
-            // std::cout << goal << std::endl;
             goal->parent = node;
             std::cout << "Find the path with " << count << " iterations" << std::endl;
             break;
@@ -106,7 +110,6 @@ void Planner::solve(
     // 获得原始路径，但是是目标姿态到达起始姿态
     std::vector<State> initial_path;
     while (goal) {
-        // std::cout<<goal<<std::endl;
         initial_path.emplace_back(goal->state);
         goal = goal->parent;
     }

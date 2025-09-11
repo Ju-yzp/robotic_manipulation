@@ -8,6 +8,7 @@ email: Jup230551@outlook.com
 #define MOTION_PLANNING_TOTURIAL_CONTROLLER_HPP_
 
 // motion_planning_tutorial
+#include <motion_planning_tutorial/non_uniform_bspline.hpp>
 #include <motion_planning_tutorial/problemDefinition.hpp>
 #include <motion_planning_tutorial/robot_description.hpp>
 
@@ -21,7 +22,7 @@ public:
         : robot_description_(robot_description) {}
 
     // 平滑路径:满足c0,c1,c2,c3连续性
-    void smoothPath(
+    NonUniformBspline smoothPath(
         ProblemDefinition& pd, std::vector<double>& timepoint,
         const SmoothType type = SmoothType::BASIC_SPLINE);
 

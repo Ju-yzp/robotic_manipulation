@@ -25,7 +25,7 @@ public:
         double distance = std::numeric_limits<double>::infinity();
         T* nearestNeighbor = nullptr;
         for (const auto& d : data_) {
-            assert(d->state.rows() == element->state.rows());
+            assert(d->state.positions.rows() == element->state.positions.rows());
             double dist = (d->state.positions - element->state.positions).norm();
             if (dist < distance) {
                 distance = dist;

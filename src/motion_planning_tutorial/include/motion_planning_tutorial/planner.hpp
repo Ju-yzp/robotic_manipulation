@@ -25,8 +25,8 @@ public:
     Planner(
         RobotDescription::SharedPtr robot_description,
         KinematicBaseInterface::SharedPtr kinematic_interface,
-        CollisionDetector::UniquePtr& collision_detector, double step = 0.2,
-        double stop_threshold = 0.10)
+        CollisionDetector::UniquePtr& collision_detector, double step = 0.4,
+        double stop_threshold = 0.6)
         : robot_description_(robot_description),
           kinematic_interface_(kinematic_interface),
           collision_detector_(std::move(collision_detector)),
@@ -59,9 +59,9 @@ private:
     // 机械臂描述
     RobotDescription::SharedPtr robot_description_{nullptr};
 
-    uint32_t maxIter_{100000};
+    uint32_t maxIter_{100000000};
 
-    double goalBasic_{.05};
+    double goalBasic_{.08};
 
     // 随机数字生成器
     RangeNumberGenerator rng_;
@@ -85,7 +85,7 @@ private:
     double stop_threshold_;
 
     // 是否把两个状态之间的采样点加入路径中
-    bool addIntermediateStates_{true};
+    bool addIntermediateStates_{false};
 };
 
 }  // namespace motion_planning_tutorial

@@ -13,6 +13,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(MUJOCO_FOLDER /usr/local/lib/cmake)
+find_package(mujoco REQUIRED PATHS ${MUJOCO_FOLDER} NO_DEFAULT_PATH)
+find_package(OpenGL REQUIRED)
+find_package(glfw3 REQUIRED)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
@@ -57,8 +61,16 @@ target_include_directories(
   test_planner PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
                        ${Eigen3_INCLUDE_DIRS})
 
-target_link_libraries(test_planner PRIVATE Eigen3::Eigen robot_description
-                                           ikd_Tree controller)
+target_link_libraries(
+  test_planner
+  PRIVATE Eigen3::Eigen
+          robot_description
+          ikd_Tree
+          controller
+          mujoco::mujoco
+          GL
+          GLU
+          glfw)
 
 install(
   TARGETS robot_description ikd_Tree test_planner

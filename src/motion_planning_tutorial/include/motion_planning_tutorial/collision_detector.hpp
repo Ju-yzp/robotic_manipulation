@@ -19,6 +19,13 @@ email: Jup230551@outlook.com
 template class KD_TREE<pcl::PointXYZ>;
 
 namespace motion_planning_tutorial {
+
+// TODO:用于测试
+struct Scene {
+    std::vector<Eigen::Vector4d> obstacle_centers;
+    std::vector<double> obstacle_radius;
+};
+
 class CollisionDetector {
 public:
     using UniquePtr = std::unique_ptr<CollisionDetector>;
@@ -28,8 +35,11 @@ public:
     // 检测是否发生碰撞，是则返回true
     bool isOccurCollision(const Eigen::Vector4d& center, const double radius);
 
+    void set_scene(const Scene& scene) { scene_ = scene; }
+
 private:
     std::shared_ptr<KD_TREE<pcl::PointXYZ>> kd_tree_;  // k-d树用于碰撞检测
+    Scene scene_;  // TODO：场景信息，包含障碍物中心和半径（测试版本）
 };
 }  // namespace motion_planning_tutorial
 

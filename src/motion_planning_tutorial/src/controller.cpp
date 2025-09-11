@@ -7,10 +7,9 @@
 
 // motion_planning_tutorial
 #include <motion_planning_tutorial/controller.hpp>
-#include <motion_planning_tutorial/non_uniform_bspline.hpp>
 
 namespace motion_planning_tutorial {
-void Controller::smoothPath(
+NonUniformBspline Controller::smoothPath(
     ProblemDefinition& pd, std::vector<double>& timepoint, const SmoothType type) {
     const auto path = pd.get_initial_path();
     std::cout << "Path length is " << int(path.size()) << std::endl;
@@ -53,10 +52,10 @@ void Controller::smoothPath(
     // 采样，然后写入文件
     int max_sample_count = 16000;
     double time_step = timesum / double(max_sample_count);
-    // std::ofstream outFile("/home/up/motion_planning/python_tool/statistic_data.txt",
-    // std::ios::trunc);
+    std::ofstream outFile(
+        "/home/up/motion_planning/python_tool/statistic_data.txt", std::ios::trunc);
     for (int i{0}; i < max_sample_count; i++) {
-        Eigen::VectorXd sample_point = non_uniform_bspline.evaluateDeBoorT(time_step * i);
+        Eigen::VectorXd sample_point = non_uniform_bspline.evaluateDeBoor(time_step * i);
         std::ofstream outFile(
             "/home/up/motion_planning/python_tool/statistic_data.txt", std::ios::app);
         if (outFile.is_open()) {
@@ -66,6 +65,7 @@ void Controller::smoothPath(
             outFile.close();
         }
     }
+    return non_uniform_bspline;
 }
 
 std::vector<double> Controller::set_initial_time_point(const ProblemDefinition& pd) {

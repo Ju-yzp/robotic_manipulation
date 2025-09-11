@@ -1,9 +1,25 @@
+// cpp
 #include <cassert>
-#include <motion_planning_tutorial/ur5e_kinematic.hpp>
-
+#include <cmath>
+#include <iostream>
 #include <unordered_map>
 
+// motion_planning_tutorial
+#include <motion_planning_tutorial/ur5e_kinematic.hpp>
+
 namespace motion_planning_tutorial {
+
+void normalizeAngle(std::vector<State>& states) {
+    for (auto& state : states) {
+        auto& positions = state.positions;
+        for (int i{0}; i < positions.rows(); ++i) {
+            double angle = std::fmod(positions(i), 2.0 * M_PI);
+            positions(i) =
+                angle > M_PI ? angle - 2.0 * M_PI : (angle < -M_PI ? 2.0 * M_PI + angle : angle);
+        }
+    }
+}
+
 Eigen::Matrix4d frameTransform(float a, float d, float alpha, float theta) {
     Eigen::Matrix4d transform_matrix;
     float st = sin(theta);
@@ -111,6 +127,9 @@ std::vector<State> Ur5eKinematic::inverseKinematic(const Eigen::Isometry3d& goal
         }
         solutions.push_back(state);
     }
+
+    normalizeAngle(solutions);
+
     return solutions;
 };
 
@@ -201,7 +220,7 @@ bool Ur5eKinematic::getArmThetas(
     float len = sqrt(pow(new_x, 2) + pow(new_z, 2));
 
     if (a2 + a3 < len || a2 - a3 > len) {
-        // std::cout<<"Cound't reach specify pose"<<std::endl;
+        std::cout << "Cound't reach specify pose" << std::endl;
         return false;
     }
 

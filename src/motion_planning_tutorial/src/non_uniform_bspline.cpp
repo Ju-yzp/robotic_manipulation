@@ -1,5 +1,6 @@
 // cpp
 #include <algorithm>
+#include <iostream>
 #include <limits>
 
 // motion_palnning_tutorial
@@ -39,37 +40,29 @@ NonUniformBspline::NonUniformBspline(
 }
 
 bool NonUniformBspline::checkFeasiblity() {
-    bool feasible{true};
-
     Eigen::MatrixXd p = control_points_;
     const int dim = control_points_.cols();
 
-    double max_vel = std::numeric_limits<double>::lowest();
-    // 检查速度可行性
+    //  检查速度可行性
     for (int i{0}; i < p.rows() - 1; ++i) {
         Eigen::VectorXd vec = p_ * (p.row(i + 1) - p.row(i)) / (u_(i + p_ + 1) - u_(i + 1));
-        for (int j{0}; j < dim; ++j) {
-            if (fabs(vec(j)) > velocity_limit_(j)) feasible = false;
-            max_vel = std::max(max_vel, fabs(vec(j)));
-        }
+        for (int j{0}; j < dim; ++j)
+            if (fabs(vec(j)) > velocity_limit_(j)) return false;
     }
 
     // 检查加速度可行性
     if (has_acceleration_limit_) {
         double max_vel = std::numeric_limits<double>::lowest();
         for (int i{0}; i < p.rows() - 2; ++i) {
-            Eigen::VectorXd acc =
-                p_ * (p_ - 1) * ((p.row(i + 2) - p.row(i + 1))) / (u_(i + p_ + 2) - u_(i + 2)) -
-                (p.row(i + 1) - p.row(i)) / (u_(i + p_ + 1) - u_(i + 1)) /
-                    (u_(i + p_ + 1) - u_(i + 2));
-            for (int j{0}; j < dim; ++j) {
-                if (fabs(acc(j)) > acceleration_limit_(j)) feasible = false;
-                max_vel = std::max(max_vel, fabs(acc(j)));
-            }
+            Eigen::VectorXd acc = ((p.row(i + 2) - p.row(i + 1)) / (u_(i + p_ + 2) - u_(i + 2)) -
+                                   (p.row(i + 1) - p.row(i)) / (u_(i + p_ + 1) - u_(i + 1))) /
+                                  (u_(i + p_ + 1) - u_(i + 2));
+            for (int j{0}; j < dim; ++j)
+                if (fabs(acc(j)) > acceleration_limit_(j)) return false;
         }
     }
 
-    return feasible;
+    return true;
 }
 
 Eigen::VectorXd NonUniformBspline::evaluateDeBoor(const double& u) {
@@ -114,60 +107,65 @@ bool NonUniformBspline::reallocateTime() {
     // 检查速度可行性
     for (int i{0}; i < p.rows() - 1; ++i) {
         Eigen::VectorXd vec = p_ * (p.row(i + 1) - p.row(i)) / (u_(i + p_ + 1) - u_(i + 1));
+        bool flag{true};
         for (int j{0}; j < dim; ++j) {
             if (fabs(vec(j)) > velocity_limit_(j) + 1e-4) {
                 feasible = false;
-                for (int k{0}; k < dim; ++k)  // 求最大比例
-                    max_vel_artio = std::max(max_vel_artio, fabs(vec(k) / velocity_limit_(k)));
-
-                max_vel_artio = max_vel_artio < artio_limit_ ? max_vel_artio : artio_limit_;
-
-                // 重新分配时间，也就是重新给节点赋值
-                double time_ori = u_(i + p_ + 1) - u_(i + 1);
-                double time_new = time_ori * max_vel_artio;
-                double delta_t = time_new - time_ori;
-                double time_inc = delta_t / double(p_);
-
-                for (int k{i + 2}; k <= i + p_ + 1; ++k) u_(k) += double(k - i - 1) * time_inc;
-
-                for (int k{i + p_ + 2}; k < u_.rows(); ++k) {
-                    u_(k) += delta_t;
-                }
+                flag = false;
+                break;
             }
         }
+        if (flag) continue;
+        for (int j{0}; j < dim; ++j)
+            max_vel_artio = std::max(max_vel_artio, fabs(vec(j) / velocity_limit_(j)));
+
+        max_vel_artio = max_vel_artio < artio_limit_ ? max_vel_artio : artio_limit_ + 1e-4;
+
+        // 重新分配时间，也就是重新给节点赋值
+        double time_ori = u_(i + p_ + 1) - u_(i + 1);
+        double time_new = time_ori * max_vel_artio;
+        double delta_t = time_new - time_ori;
+        double time_inc = delta_t / double(p_);
+
+        for (int j{i + 2}; j < i + p_ + 2; ++j) u_(j) += double(j - i - 1) * time_inc;
+
+        for (int j{i + p_ + 2}; j < u_.rows(); ++j) u_(j) += delta_t;
     }
 
     // 检查加速度可行性
     if (has_acceleration_limit_) {
         double max_acc_artio = std::numeric_limits<double>::lowest();
         for (int i{0}; i < p.rows() - 2; ++i) {
-            Eigen::VectorXd acc =
-                p_ * (p_ - 1) * ((p.row(i + 2) - p.row(i + 1))) / (u_(i + p_ + 2) - u_(i + 2)) -
-                (p.row(i + 1) - p.row(i)) / (u_(i + p_ + 1) - u_(i + 1)) /
-                    (u_(i + p_ + 1) - u_(i + 2));
+            Eigen::VectorXd acc = ((p.row(i + 2) - p.row(i + 1)) / (u_(i + p_ + 2) - u_(i + 2)) -
+                                   (p.row(i + 1) - p.row(i)) / (u_(i + p_ + 1) - u_(i + 1))) /
+                                  (u_(i + p_ + 1) - u_(i + 2));
+            ;
+            bool flag{true};
             for (int j{0}; j < dim; ++j) {
                 if (fabs(acc(j)) > acceleration_limit_(j) + 1e-4) {
                     feasible = false;
-                    for (int k{0}; k < dim; ++k)  // 求最大比例
-                        max_acc_artio =
-                            std::max(max_acc_artio, fabs(acc(k) / acceleration_limit_(k)));
-
-                    max_acc_artio = max_acc_artio < artio_limit_ ? max_acc_artio : artio_limit_;
-                    // 重新分配时间，也就是重新给节点赋值
-                    double time_ori = u_(i + p_ + 1) - u_(i + 2);
-                    double time_new = time_ori * max_acc_artio;
-                    double delta_t = time_new - time_ori;
-                    double time_inc = delta_t / double(p_ - 1);
-
-                    if (i == 1 || i == 2) {
-                        for (int k{2}; k <= 5; ++k) u_(k) += double(k - 1) * time_inc;
-                        for (int k{6}; k < u_.rows(); ++k) u_(k) += 4.0 * time_inc;
-                    } else {
-                        for (int k{i + 3}; k <= i + p_ + 2; ++k)
-                            u_(k) += double(k - i - 2) * time_inc;
-                        for (int k{i + p_ + 2}; k < u_.rows(); ++k) u_(k) += delta_t;
-                    }
+                    flag = false;
+                    break;
                 }
+            }
+            if (flag) continue;
+            for (int j{0}; j < dim; ++j)
+                max_acc_artio = std::max(max_acc_artio, fabs(acc(j) / acceleration_limit_(j)));
+
+            max_acc_artio = max_acc_artio < artio_limit_ ? max_acc_artio : artio_limit_ + 1e-4;
+
+            // 重新分配时间，也就是重新给节点赋值
+            double time_ori = u_(i + p_ + 1) - u_(i + 2);
+            double time_new = time_ori * max_acc_artio;
+            double delta_t = time_new - time_ori;
+            double time_inc = delta_t / double(p_ - 1);
+
+            if (i == 1 || i == 2) {
+                for (int j{2}; j < 6; ++j) u_(j) += double(j - 1) * time_inc;
+                for (int j{6}; j < u_.rows(); ++j) u_(j) += 4.0 * time_inc;
+            } else {
+                for (int j{i + 3}; j <= i + p_ + 2; ++j) u_(j) += double(j - i - 2) * time_inc;
+                for (int j{i + p_ + 2}; j < u_.rows(); ++j) u_(j) += delta_t;
             }
         }
     }

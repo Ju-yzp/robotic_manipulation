@@ -59,8 +59,8 @@ int main() {
 
     if (pd.get_state()) std::cout << "Succeful to solve the planning problem." << std::endl;
 
-    for (const auto& state : pd.get_initial_path())
-        std::cout << state.positions.transpose() << std::endl;
+    // for (const auto& state : pd.get_initial_path())
+    //     std::cout << state.positions.transpose() << std::endl;
 
     mpt::Controller controller(robot_description);
     controller.set_id_and_name(0, "shoulder_pan");

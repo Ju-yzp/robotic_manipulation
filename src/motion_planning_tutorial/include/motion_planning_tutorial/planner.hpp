@@ -30,7 +30,7 @@ public:
         : robot_description_(robot_description),
           kinematic_interface_(kinematic_interface),
           collision_detector_(std::move(collision_detector)),
-          step(step),
+          step_(step),
           stop_threshold_(stop_threshold) {}
 
     void solve(ProblemDefinition& pd);  // 后面引入计时器，设置最大规划时间
@@ -47,7 +47,9 @@ private:
     State expand(State& st, State& dt);
 
     // 检查两个状态是否发生碰撞
-    bool checkMotion(State st, State dt);
+    bool checkMotion(State st, State dt, int& num);
+
+    std::vector<State> interpolate(const State& st, const State& dt, const int num, const int in);
 
     struct Node {
         State state;
@@ -77,7 +79,7 @@ private:
     CollisionDetector::UniquePtr collision_detector_;
 
     // 步长
-    double step;
+    double step_;
 
     // 停止的阈值
     double stop_threshold_;

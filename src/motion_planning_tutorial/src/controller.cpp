@@ -1,14 +1,15 @@
 // cpp
 #include <cassert>
-// cpp
-#include <cassert>
+#include <chrono>
 #include <cstddef>
 #include <fstream>
 #include <iostream>
 #include <limits>
+
 // motion_planning_tutorial
 #include <motion_planning_tutorial/controller.hpp>
 #include <motion_planning_tutorial/non_uniform_bspline.hpp>
+#include <thread>
 
 namespace motion_planning_tutorial {
 void Controller::smoothPath(
@@ -29,41 +30,40 @@ void Controller::smoothPath(
 
     NonUniformBspline non_uniform_bspline(control_points, 3, 0.05, robot_description_, id_map_);
 
+    // TODO:时间控制点粗略估计，其实很容易造成电机性能浪费,后面会改进
     Eigen::VectorXd knot(n + 5);
     for (size_t i{0}; i < n + 5; ++i) {
         if (i < 4)
             knot(i) = 0.0;
         else if (i >= 4 && i <= n)
-            knot(i) = 0.002 * (i - 3);  // 0.05是间隔
+            knot(i) = 0.002 * (i - 3);  // 0.05是时间间隔
         else
             knot(i) = 0.002 * (n - 2);
     }
 
+    non_uniform_bspline.set_knot(knot);
     non_uniform_bspline.set_has_acceleration_limit(true);
 
-    // non_uniform_bspline.set_knot(knot);
     while (!non_uniform_bspline.checkFeasiblity()) {
-        // std::cout << "11" << std::endl;
         non_uniform_bspline.reallocateTime();
+        double timesum = non_uniform_bspline.getTimeSum();
+        std::cout << "Time sum: " << timesum << std::endl;
     }
-
-    double timesum = non_uniform_bspline.getTimeSum();
-    std::cout << "Time sum: " << timesum << std::endl;
 
     // 采样，然后写入文件
-    int max_sample_count = 16000;
-    double time_step = timesum / double(max_sample_count);
-    for (int i{0}; i < max_sample_count; i++) {
-        Eigen::VectorXd sample_point = non_uniform_bspline.evaluateDeBoorT(time_step * i);
-        std::ofstream outFile(
-            "/home/up/motion_planning/python_tool/statistic_data.txt", std::ios::app);
-        if (outFile.is_open()) {
-            outFile << i * time_step << " " << sample_point(0) << " " << sample_point(1) << " "
-                    << sample_point(2) << " " << sample_point(3) << " " << sample_point(4) << " "
-                    << sample_point(5) << std::endl;
-            outFile.close();
-        }
-    }
+    // int max_sample_count = 16000;
+    // double time_step = timesum / double(max_sample_count);
+    // for (int i{0}; i < max_sample_count; i++) {
+    //     Eigen::VectorXd sample_point = non_uniform_bspline.evaluateDeBoorT(time_step * i);
+    //     std::ofstream outFile(
+    //         "/home/up/motion_planning/python_tool/statistic_data.txt", std::ios::app);
+    //     if (outFile.is_open()) {
+    //         outFile << i * time_step << " " << sample_point(0) << " " << sample_point(1) << " "
+    //                 << sample_point(2) << " " << sample_point(3) << " " << sample_point(4) << " "
+    //                 << sample_point(5) << std::endl;
+    //         outFile.close();
+    //     }
+    // }
 }
 
 std::vector<double> Controller::set_initial_time_point(const ProblemDefinition& pd) {

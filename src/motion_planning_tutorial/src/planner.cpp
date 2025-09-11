@@ -59,19 +59,27 @@ void Planner::solve(
         auto nearest_node = nn_.searchNearestNeighbor(lastest_solution);
 
         double dist = distance(nearest_node->state, lastest_solution->state);
-        if (dist > step)
+        if (dist > step_)
             lastest_solution->state = expand(nearest_node->state, lastest_solution->state);
 
         count++;
-        if (checkMotion(nearest_node->state, lastest_solution->state)) {
-            if (addIntermediateStates_) {
-                std::vector<State> states;
 
+        int num{3};
+
+        const auto& st = nearest_node->state;
+        const auto& dt = lastest_solution->state;
+
+        if (checkMotion(st, dt, num)) {
+            if (addIntermediateStates_) {
+                std::vector<State> states = interpolate(st, dt, num, 3);
+
+                Node* last_node = nearest_node;
                 for (size_t start = 1; start < states.size(); ++start) {
                     auto* node = new Node();
                     node->state = states[start];
-                    node->parent = nn_.searchNearestNeighbor(node);
+                    node->parent = last_node;
                     nn_.add(node);
+                    last_node = node;
                     lastest_solution = node;
                 }
             } else {
@@ -103,8 +111,6 @@ void Planner::solve(
         goal = goal->parent;
     }
 
-    // std::cout<<(int)(initial_path.size())<<std::endl;
-
     // 翻转路径
     std::vector<State> reverse_path;
     reverse_path.reserve(initial_path.size() + 2);
@@ -133,7 +139,7 @@ State Planner::uniformSample() {
 State Planner::expand(State& st, State& dt) {
     double dist = distance(st, dt);
     State new_state;
-    new_state.positions = st.positions + (dt.positions - st.positions) * (step / dist);
+    new_state.positions = st.positions + (dt.positions - st.positions) * (step_ / dist);
     return new_state;
 }
 
@@ -141,13 +147,58 @@ State Planner::goalSample(State goal_state) {
     Eigen::Vector<double, 6> positions;
     for (size_t id{0}; id < 6; id++) {
         positions[id] =
-            rng_.uniform(goal_state.positions[id] - step, goal_state.positions[id] + step);
+            rng_.uniform(goal_state.positions[id] - step_, goal_state.positions[id] + step_);
     }
     State state{positions};
     return state;
 }
 
-bool Planner::checkMotion(State st, State dt) {  // 对状态之间进行插值，然后检查中途是否发生碰撞
+bool Planner::checkMotion(
+    State st, State dt, int& num) {  // 对状态之间进行插值，然后检查中途是否发生碰撞
+    std::vector<State> states;
+
+    states.resize(num + 2);
+    states[0] = st;
+    states[num + 1] = dt;
+    for (int i{1}; i <= num; ++i) {
+        states[i].positions =
+            st.positions + (dt.positions - st.positions) * (double(i) / double(num + 1));
+    }
+
+    int count{0};
+    for (const auto& state : states) {
+        robot_description_->update_envelopes_position(state);
+        for (auto& in : id_map_) {
+            auto envelopes = robot_description_->get_envelope(in.second);
+            for (auto envelope : envelopes) {
+                if (collision_detector_->isOccurCollision(
+                        envelope.global_translation, envelope.radius)) {
+                    num = count;
+                    return false;  // 有碰撞发生
+                }
+            }
+        }
+        count++;
+    }
     return true;
+}
+
+std::vector<State> Planner::interpolate(
+    const State& st, const State& dt, const int num, const int in) {
+    std::vector<State> states;
+    if (num == in) {
+        // std::cout << "wow" << std::endl;
+        states.resize(num + 2);
+        states[num + 1] = dt;
+    } else
+        states.resize(num + 1);
+
+    states[0] = st;
+
+    for (int i{1}; i < num + 1; ++i)
+        states[i].positions =
+            st.positions + (dt.positions - st.positions) * (double(i) / double(in));
+
+    return states;
 }
 }  // namespace motion_planning_tutorial

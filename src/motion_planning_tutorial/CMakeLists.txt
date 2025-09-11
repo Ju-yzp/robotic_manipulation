@@ -21,8 +21,6 @@ find_package(Eigen3 REQUIRED)
 find_package(PCL REQUIRED)
 find_package(pcl_conversions REQUIRED)
 
-find_package(tinyspline)
-
 add_library(robot_description src/robot_description.cpp)
 add_library(ikd_Tree src/ikd_Tree.cpp)
 
@@ -46,12 +44,11 @@ target_link_libraries(robot_description PUBLIC Eigen3::Eigen yaml-cpp)
 # target_link_libraries(test_ur5e_kinematic robot_description ikd_Tree yaml-cpp
 # ${PCL_LIBRARIES})
 
-add_library(controller src/controller.cpp)
+add_library(controller src/controller.cpp src/non_uniform_bspline.cpp)
+
 target_include_directories(
   controller PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-                    ${tinyspline_INCLUDE_DIRS} ${Eigen3_INCLUDE_DIRS})
-
-target_link_libraries(controller PUBLIC ${tinyspline_LIBRARIES})
+                    ${Eigen3_INCLUDE_DIRS})
 
 add_executable(test_planner test/test_planner.cpp src/ur5e_kinematic.cpp
                             src/collision_detector.cpp src/planner.cpp)

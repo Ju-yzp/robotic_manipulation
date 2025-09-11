@@ -24,11 +24,11 @@ public:
     using SharedPtr = std::shared_ptr<RobotDescription>;
     using UniquePtr = std::unique_ptr<RobotDescription>;
 
-    struct JointLimit {               // 关节约束
-        double joint_position_upper;  // 关节位置上限
-        double joint_position_lower;  // 关节位置下限
-        double joint_velocity_upper;  // 关节速度上限
-        double joint_velocity_lower;  // 关节速度下限
+    struct JointLimit {                     // 关节约束
+        double joint_position_upper;        // 关节位置上限
+        double joint_position_lower;        // 关节位置下限
+        double joint_velocity;              // 关节速度限制绝对值
+        double joint_angular_acceleration;  // 关节角加速度
     };
 
     struct Envelope {                 // 包络体

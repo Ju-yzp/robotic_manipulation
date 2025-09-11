@@ -12,7 +12,7 @@ int main() {
     namespace mpt = motion_planning_tutorial;
     // 先定义规划问题
     Eigen::Vector<double, 6> start_positions;
-    start_positions << 0.8, -0.4, -0.2, 1.0, 1.0, -2.0;
+    start_positions << 1.8, 1.2, -1.0, 1.7, 1.0, -2.0;
     mpt::State start_state;
     start_state.positions = start_positions;
     Eigen::Isometry3d goal_state = Eigen::Isometry3d::Identity();

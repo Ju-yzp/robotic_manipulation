@@ -1,6 +1,5 @@
 // cpp
 #include <algorithm>
-#include <iostream>
 #include <limits>
 
 // motion_palnning_tutorial
@@ -68,24 +67,20 @@ bool NonUniformBspline::checkFeasiblity() {
 Eigen::VectorXd NonUniformBspline::evaluateDeBoor(const double& u) {
     double ub = std::min(std::max(u_(p_), u), u_(m_ - p_));
 
-    // determine which [ui,ui+1] lay in
     int k = p_;
     while (true) {
         if (u_(k + 1) >= ub) break;
         ++k;
     }
 
-    /* deBoor's alg */
     std::vector<Eigen::VectorXd> d;
     for (int i = 0; i <= p_; ++i) {
         d.push_back(control_points_.row(k - p_ + i));
-        // cout << d[i].transpose() << endl;
     }
 
     for (int r = 1; r <= p_; ++r) {
         for (int i = p_; i >= r; --i) {
             double alpha = (ub - u_[i + k - p_]) / (u_[i + 1 + k - r] - u_[i + k - p_]);
-            // cout << "alpha: " << alpha << endl;
             d[i] = (1 - alpha) * d[i - 1] + alpha * d[i];
         }
     }

@@ -73,7 +73,7 @@ void Planner::solve(
             if (addIntermediateStates_) {
                 std::vector<State> states = interpolate(st, dt, num, 3);
 
-                Node* last_node = nearest_node;
+                Node* last_node = lastest_solution;
                 for (size_t start = 1; start < states.size(); ++start) {
                     auto* node = new Node();
                     node->state = states[start];

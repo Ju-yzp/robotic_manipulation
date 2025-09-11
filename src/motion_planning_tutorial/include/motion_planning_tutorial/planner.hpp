@@ -85,7 +85,7 @@ private:
     double stop_threshold_;
 
     // 是否把两个状态之间的采样点加入路径中
-    bool addIntermediateStates_{false};
+    bool addIntermediateStates_{true};
 };
 
 }  // namespace motion_planning_tutorial

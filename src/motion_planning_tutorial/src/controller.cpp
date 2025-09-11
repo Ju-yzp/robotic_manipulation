@@ -1,9 +1,11 @@
 // cpp
 #include <cassert>
+// cpp
+#include <cassert>
 #include <cstddef>
+#include <fstream>
 #include <iostream>
 #include <limits>
-#include <fstream>
 // motion_planning_tutorial
 #include <motion_planning_tutorial/controller.hpp>
 #include <motion_planning_tutorial/non_uniform_bspline.hpp>
@@ -38,7 +40,7 @@ void Controller::smoothPath(
     }
 
     non_uniform_bspline.set_has_acceleration_limit(true);
-    
+
     // non_uniform_bspline.set_knot(knot);
     while (!non_uniform_bspline.checkFeasiblity()) {
         // std::cout << "11" << std::endl;
@@ -56,33 +58,34 @@ void Controller::smoothPath(
         std::ofstream outFile(
             "/home/up/motion_planning/python_tool/statistic_data.txt", std::ios::app);
         if (outFile.is_open()) {
-            outFile << i * time_step << " "<< sample_point(0) << " " << sample_point(1)
-                    << " " << sample_point(2) <<" "<< sample_point(3) 
-                    << " " << sample_point(4) << " " << sample_point(5) << std::endl;
+            outFile << i * time_step << " " << sample_point(0) << " " << sample_point(1) << " "
+                    << sample_point(2) << " " << sample_point(3) << " " << sample_point(4) << " "
+                    << sample_point(5) << std::endl;
             outFile.close();
         }
     }
 }
-    std::vector<double> Controller::set_initial_time_point(const ProblemDefinition& pd) {
-        auto path = pd.get_initial_path();
 
-        std::vector<double> timepoint;
-        double time{0.0};
-        double max_spenttime{0.0};
-        timepoint.emplace_back(time);
-        for (size_t id{1}; id < path.size() - 1; ++id) {
-            max_spenttime = std::numeric_limits<double>::lowest();
-            for (const auto& m : id_map_) {
-                const auto jointlimit = robot_description_->get_jointlimit(m.second);
-                double spenttime = std::abs(
-                    (path[id + 1].positions(m.first) - path[id].positions(m.first)) /
-                    jointlimit.joint_velocity);
-                max_spenttime = spenttime > max_spenttime ? spenttime : max_spenttime;
-            }
-            time += max_spenttime;
-            timepoint.emplace_back(time);
+std::vector<double> Controller::set_initial_time_point(const ProblemDefinition& pd) {
+    auto path = pd.get_initial_path();
+
+    std::vector<double> timepoint;
+    double time{0.0};
+    double max_spenttime{0.0};
+    timepoint.emplace_back(time);
+    for (size_t id{1}; id < path.size() - 1; ++id) {
+        max_spenttime = std::numeric_limits<double>::lowest();
+        for (const auto& m : id_map_) {
+            const auto jointlimit = robot_description_->get_jointlimit(m.second);
+            double spenttime = std::abs(
+                (path[id + 1].positions(m.first) - path[id].positions(m.first)) /
+                jointlimit.joint_velocity);
+            max_spenttime = spenttime > max_spenttime ? spenttime : max_spenttime;
         }
-
-        return timepoint;
+        time += max_spenttime;
+        timepoint.emplace_back(time);
     }
+
+    return timepoint;
+}
 }  // namespace motion_planning_tutorial

@@ -13,8 +13,19 @@ void Planner::solve(
     // 判断一开始能不能有满足目标配置
     auto solutions = kinematic_interface_->inverseKinematic(pd.get_goal_state());
 
-    Node* goal = new Node();
-    Node* start = new Node();
+    robot_description_->update_envelopes_position(pd.get_start_state());
+    for (auto& in : id_map_) {
+        const auto jointlimit = robot_description_->get_jointlimit(in.second);
+        auto envelopes = robot_description_->get_envelope(in.second);
+        for (auto envelope : envelopes) {
+            if (collision_detector_->isOccurCollision(
+                    envelope.global_translation, envelope.radius)) {
+                std::cout << "Invalid start state, collision occurs at joint: " << in.second
+                          << std::endl;
+                return;  // 有碰撞发生
+            }
+        }
+    }
 
     solutions.erase(
         std::remove_if(
@@ -38,6 +49,9 @@ void Planner::solve(
                 return false;  // 没有碰撞发生
             }),
         solutions.end());
+
+    Node* goal = new Node();
+    Node* start = new Node();
 
     if (solutions.empty()) {
         std::cout << "Has no invalid goal solution" << std::endl;
@@ -69,6 +83,7 @@ void Planner::solve(
 
         count++;
 
+        std::cout << count << std::endl;
         int num{2};
 
         const auto& st = nearest_node->state;

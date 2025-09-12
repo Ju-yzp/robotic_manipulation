@@ -65,7 +65,7 @@ private:
 
     double interval_;
 
-    double artio_limit_{1.08};
+    double artio_limit_{1.04};
     bool has_acceleration_limit_{false};
 
     // 机器人描述

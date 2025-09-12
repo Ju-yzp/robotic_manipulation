@@ -131,12 +131,12 @@ int main() {
 
     // 先定义规划问题
     Eigen::Vector<double, 6> start_positions;
-    start_positions << 1.0, -0.7, -1.2, 0.2, 0.2, 1.0;
+    start_positions << 1.30, -0.314, -0.377, -0.503, 0.0, 0.0;
     mpt::State start_state;
     start_state.positions = start_positions;
     mpt::State end_state;
     Eigen::Vector<double, 6> end_positions;
-    end_positions << -2.0, 0, -1.6, 0.5, 0.8, 2.1;
+    end_positions << -1.32, -0.503, -0.723, 0.0, 0.0, 0.0;
     end_state.positions = end_positions;
     Eigen::Isometry3d goal_state = ur5e_kinematic->get_endeffector_pose(end_state);
     mpt::ProblemDefinition pd(start_state, goal_state);
@@ -150,10 +150,11 @@ int main() {
     // 碰撞检测器
     mpt::Scene scene;
     scene.obstacle_centers = {
-        Eigen::Vector4d(-200.0, 500.0, 900.0, 1.0), Eigen::Vector4d(100.0, -400.0, 750.0, 1.0)
-        // Eigen::Vector4d(300.0, 400.0, 100.0,1.0)
+        Eigen::Vector4d(-200.0, 500.0, 600.0, 1.0), Eigen::Vector4d(100.0, -200.0, 650.0, 1.0),
+        Eigen::Vector4d(300.0, 400.0, 400.0, 1.0),  Eigen::Vector4d(300.0, 100.0, 500.0, 1.0),
+        Eigen::Vector4d(300.0, 400.0, 100.0, 1.0),  Eigen::Vector4d(100.0, -200.0, 120.0, 1.0),
     };
-    scene.obstacle_radius = {100.0, 100.0};
+    scene.obstacle_radius = {100.0, 100.0, 100.0, 100.0, 100.0, 100.0};
     std::shared_ptr<KD_TREE<pcl::PointXYZ>> kd_tree_;
     kd_tree_ = std::make_shared<KD_TREE<pcl::PointXYZ>>();
     mpt::CollisionDetector::UniquePtr collision_detector =
@@ -231,9 +232,9 @@ int main() {
 
     int count = 0;
     double time_sum = bspilne.getTimeSum();
-    double time_step = time_sum / double(300);
+    double time_step = time_sum / double(500);
 
-    while (!glfwWindowShouldClose(window) && count <= 300) {
+    while (!glfwWindowShouldClose(window) && count <= 500) {
         auto positions = bspilne.evaluateDeBoor(time_step * (double)count);
         mujoco_resource::data->qpos[0] = positions(0);
         mujoco_resource::data->qpos[1] = positions(1);
@@ -254,7 +255,7 @@ int main() {
         mjr_render(viewport, &mujoco_resource::scn, &mujoco_resource::con);
         glfwSwapBuffers(window);
         glfwPollEvents();
-        std::this_thread::sleep_for(std::chrono::milliseconds(40));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
         count++;
     }
 

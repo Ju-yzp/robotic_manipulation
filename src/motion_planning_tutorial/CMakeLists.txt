@@ -24,6 +24,10 @@ find_package(yaml-cpp REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(PCL REQUIRED)
 find_package(pcl_conversions REQUIRED)
+find_package(urdf REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(visualization_msgs REQUIRED)
+find_package(rclcpp REQUIRED)
 
 add_library(robot_description src/robot_description.cpp)
 add_library(ikd_Tree src/ikd_Tree.cpp)
@@ -72,8 +76,25 @@ target_link_libraries(
           GLU
           glfw)
 
+add_library(VisualizationModule src/trajectory_visualization.cpp)
+
+target_include_directories(
+  VisualizationModule
+  PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include> ${urdf_INCLUDE_DIRS}
+         ${tf2_INCLUDE_DIRS} ${Eigen3_INCLUDE_DIRS}
+         ${visualization_msgs_INCLUDE_DIRS} ${rclcpp_INCLUDE_DIRS})
+
+target_link_libraries(
+  VisualizationModule
+  PUBLIC ${urdf_LIBRARIES} ${tf2_LIBRARIES} ${visualization_msgs_LIBRARIES}
+         ${rclcpp_LIBRARIES} Eigen3::Eigen)
+
+add_executable(test_trajectory_visualization test/test_visualization_module.cpp)
+
+target_link_libraries(test_trajectory_visualization PRIVATE VisualizationModule)
 install(
-  TARGETS robot_description ikd_Tree test_planner
+  TARGETS robot_description ikd_Tree VisualizationModule test_planner
+          test_trajectory_visualization
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)

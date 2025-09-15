@@ -25,8 +25,8 @@ public:
     Planner(
         RobotDescription::SharedPtr robot_description,
         KinematicBaseInterface::SharedPtr kinematic_interface,
-        CollisionDetector::UniquePtr& collision_detector, double step = 0.2,
-        double stop_threshold = 0.26)
+        CollisionDetector::UniquePtr& collision_detector, double step = 0.08,
+        double stop_threshold = 0.12)
         : robot_description_(robot_description),
           kinematic_interface_(kinematic_interface),
           collision_detector_(std::move(collision_detector)),

@@ -34,9 +34,9 @@ NonUniformBspline Controller::smoothPath(
         if (i < 4)
             knot(i) = 0.0;
         else if (i >= 4 && i <= n)
-            knot(i) = 0.002 * (i - 3);  // 0.05是时间间隔
+            knot(i) = 0.05 * (i - 3);
         else
-            knot(i) = 0.002 * (n - 2);
+            knot(i) = 0.05 * (n - 2);
     }
 
     non_uniform_bspline.set_knot(knot);

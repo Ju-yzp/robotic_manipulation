@@ -151,10 +151,8 @@ int main() {
     mpt::Scene scene;
     scene.obstacle_centers = {
         Eigen::Vector4d(-200.0, 500.0, 600.0, 1.0), Eigen::Vector4d(100.0, -200.0, 650.0, 1.0),
-        Eigen::Vector4d(300.0, 400.0, 400.0, 1.0),  Eigen::Vector4d(300.0, 100.0, 500.0, 1.0),
-        Eigen::Vector4d(300.0, 400.0, 100.0, 1.0),  Eigen::Vector4d(100.0, -200.0, 120.0, 1.0),
-    };
-    scene.obstacle_radius = {100.0, 100.0, 100.0, 100.0, 100.0, 100.0};
+        Eigen::Vector4d(300.0, 400.0, 400.0, 1.0)};
+    scene.obstacle_radius = {100.0, 100.0, 100.0};
     std::shared_ptr<KD_TREE<pcl::PointXYZ>> kd_tree_;
     kd_tree_ = std::make_shared<KD_TREE<pcl::PointXYZ>>();
     mpt::CollisionDetector::UniquePtr collision_detector =
@@ -232,9 +230,9 @@ int main() {
 
     int count = 0;
     double time_sum = bspilne.getTimeSum();
-    double time_step = time_sum / double(500);
+    double time_step = time_sum / double(700);
 
-    while (!glfwWindowShouldClose(window) && count <= 500) {
+    while (!glfwWindowShouldClose(window) && count <= 700) {
         auto positions = bspilne.evaluateDeBoor(time_step * (double)count);
         mujoco_resource::data->qpos[0] = positions(0);
         mujoco_resource::data->qpos[1] = positions(1);

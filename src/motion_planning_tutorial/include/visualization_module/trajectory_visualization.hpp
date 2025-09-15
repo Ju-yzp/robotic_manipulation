@@ -38,7 +38,7 @@ public:
         Eigen::Matrix4d offest{Eigen::Matrix4d::Identity()};         // 姿态
         Eigen::Matrix4d pose_to_fixed{Eigen::Matrix4d::Identity()};  // 相对于基坐标的位姿
         string mesh_file{""};                                        // 纹理文件
-        string name;                                                 // 连杆名称
+        string name{""};                                             // 连杆名称
     };
 
     enum class JointRotationAxis : uint8_t { X = 0, Y = 1, Z = 2 };
@@ -47,7 +47,7 @@ public:
         Eigen::Matrix4d origin_pose{Eigen::Matrix4d::Identity()};  // 关节原始位姿
         Eigen::Matrix4d new_pose{Eigen::Matrix4d::Identity()};     // 变换后的新姿态
         Link child_link;                                           // 子连杆
-        string name;                                               // 关节名称
+        string name{""};                                           // 关节名称
         vector<Joint*> child_joints;                               // 子关节
 
         bool is_fixed{true};    // 固定关节标志
@@ -98,7 +98,7 @@ private:
     // 更新关节状态
     void updateState(
         const std::unordered_map<std::string, double>& joint_state_pair, Joint* joint,
-        Eigen::Matrix4d& tf);
+        Eigen::Matrix4d tf);
 
     // 获取marker,所有产生的marker的frame_id默认使用"map"
     visualization_msgs::msg::Marker getMarker(
@@ -112,7 +112,14 @@ private:
     // 获取连杆的纹理文件信息
     bool get_meshfile(shared_ptr<const urdf::Link>& link, string& mesh_file);
 
+    // 获取连杆的位姿信息
     void get_link_pose(Link& link, shared_ptr<const urdf::Link>& urdf_link);
+
+    // 获取关节的子连杆,如果子连杆不存在纹理文件，则不会添加至映射表中
+    vector<Link> get_links(const vector<string>& joint_list);
+
+    // 获取关节
+    bool get_joint(Joint* serached_joint, const string joint_name);
 
     bool is_initialized_ = false;  // 是否初始化完成
 

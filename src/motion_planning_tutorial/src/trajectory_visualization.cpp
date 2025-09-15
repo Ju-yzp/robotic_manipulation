@@ -1,4 +1,6 @@
 // visualization_module
+#include <algorithm>
+#include <iterator>
 #include <visualization_module/trajectory_visualization.hpp>
 
 // urdf
@@ -149,34 +151,46 @@ visualization_msgs::msg::MarkerArray TrajectoryVisualization::getMarkerArray(
     const std::unordered_map<std::string, double>& joint_state_pair) {
     visualization_msgs::msg::MarkerArray marker_array;
 
+    // 先更新关节位置
     Eigen::Matrix4d tf = Eigen::Matrix4d::Identity();
     for (auto& root_joint : root_joints_) {
         updateState(joint_state_pair, root_joint, tf);
     }
+
     // 测试代码
-    Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
-    cout << "-------Update State Test--------" << std::endl;
-    function<void(Joint * joint)> iter_func = [&](Joint* joint) {
-        if (joint) {
-            // if(!joint->child_link.mesh_file.empty()){
-            cout << "Joint name: " << joint->name << endl;
-            cout << "Child Link name: " << joint->child_link.name << endl;
-            cout << "Mesh file: " << joint->child_link.mesh_file << endl;
-            cout << joint->child_link.pose_to_fixed.format(CleanFmt) << std::endl;
-            cout << endl;
-            for (auto child_joint : joint->child_joints) iter_func(child_joint);
-            //}
-        }
-    };
-    for (auto root_joint : root_joints_) {
-        iter_func(root_joint);
+    // Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+    // cout << "-------Update State Test--------" << std::endl;
+    // function<void(Joint * joint)> iter_func = [&](Joint* joint) {
+    //     if (joint&&!joint->child_link.mesh_file.empty()) {
+    //         cout << "Joint name: " << joint->name << endl;
+    //         cout << "Child Link name: " << joint->child_link.name << endl;
+    //         cout << "Mesh file: " << joint->child_link.mesh_file << endl;
+    //         cout << joint->child_link.pose_to_fixed.format(CleanFmt) << std::endl;
+    //         cout << endl;
+    //     }
+    //     for (auto child_joint : joint->child_joints) iter_func(child_joint);
+    // };
+    // for (auto root_joint : root_joints_) {
+    //     iter_func(root_joint);
+    // }
+
+    vector<string> joint_list;
+    joint_list.reserve(joint_state_pair.size() + 2);
+    std::transform(
+        joint_state_pair.begin(), joint_state_pair.end(), std::back_inserter(joint_list),
+        [](const auto& pair) { return pair.first; });
+
+    vector<Link> link_list = get_links(joint_list);
+
+    // 把marker逐个添加至marker array中
+    for (uint32_t index{0}; index < link_list.size(); ++index) {
     }
     return marker_array;
 }
 
 void TrajectoryVisualization::updateState(
     const std::unordered_map<std::string, double>& joint_state_pair, Joint* joint,
-    Eigen::Matrix4d& tf) {
+    Eigen::Matrix4d tf) {
     if (!joint) return;
 
     auto& link = joint->child_link;
@@ -216,5 +230,25 @@ void TrajectoryVisualization::get_link_pose(Link& link, shared_ptr<const urdf::L
     Eigen::Quaterniond quad(
         origin.rotation.w, origin.rotation.x, origin.rotation.y, origin.rotation.z);
     link.offest.block(0, 0, 3, 3) = quad.toRotationMatrix();
+}
+
+vector<TrajectoryVisualization::Link> TrajectoryVisualization::get_links(
+    const vector<string>& joint_list) {
+    vector<Link> link_list;
+    Joint* serached_joint;
+    for (auto joint_name : joint_list) {
+        if (get_joint(serached_joint, joint_name) && !serached_joint->child_link.mesh_file.empty())
+            link_list.emplace_back(serached_joint->child_link);
+    }
+    return link_list;
+}
+
+bool TrajectoryVisualization::get_joint(Joint* serached_joint, const string joint_name) {
+    for (const auto& joint : joints_)
+        if (joint->name == joint_name) {
+            serached_joint = joint;
+            return true;
+        }
+    return false;
 }
 }  // namespace visualization_utils

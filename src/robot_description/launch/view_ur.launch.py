@@ -46,23 +46,23 @@ def generate_launch_description():
         ]),
         description='URDF文件的路径'
     )
-    
+
     rviz_config_file = LaunchConfiguration("rviz_config_file")
-    
+
     # 使用Command替换PythonExpression，直接调用xacro命令
     robot_description_content = Command([
         FindExecutable(name='xacro'), ' ',
         LaunchConfiguration('urdf_path')
     ])
-    
+
     # 配置机器人描述参数
     robot_description = {
         'robot_description': ParameterValue(
-            value=robot_description_content, 
+            value=robot_description_content,
             value_type=str
         )
     }
-        
+
     # 节点配置
     joint_state_publisher_node = Node(
         package="joint_state_publisher_gui",
@@ -87,7 +87,7 @@ def generate_launch_description():
     return LaunchDescription([
         # 设置环境变量，确保xacro能找到ROS包
         SetEnvironmentVariable('PYTHONIOENCODING', 'utf-8'),
-        
+
         urdf_path_arg,
         DeclareLaunchArgument(
             "rviz_config_file",

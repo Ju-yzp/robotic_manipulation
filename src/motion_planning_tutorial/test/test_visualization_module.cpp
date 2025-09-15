@@ -1,39 +1,50 @@
 #include <rclcpp/rclcpp.hpp>
+#include <unordered_map>
 #include <visualization_module/trajectory_visualization.hpp>
-#include "rclcpp/publisher.hpp"
-#include "rclcpp/utilities.hpp"
 
-class TrajectoryPublisher: public rclcpp::Node {
-public:
+// class TrajectoryPublisher : public rclcpp::Node {
+// public:
+//     TrajectoryPublisher() : Node("trajectory_publisher") {
+//         publisher_ =
+//             this->create_publisher<visualization_msgs::msg::MarkerArray>("trajectory_marker",
+//             10);
+//     }
+//     void parseUrdfFile(const std::string urdf_file) { tv_.loadModel(urdf_file); }
 
-TrajectoryPublisher(): Node("trajectory_publisher") {
-    publisher_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("trajectory_marker", 10);
-}
-void parseUrdfFile(const std::string urdf_file){
-    tv_.loadModel(urdf_file);
-}
+//     void update(Eigen::VectorXd state) {
+//         auto marker_array = tv_.getMarkerArray(ns_, 0, alpha_, state);
+//         publisher_->publish(marker_array);
+//     }
 
-void update(Eigen::VectorXd state){
-    auto marker_array = tv_.getMarkerArray(ns_, 0, alpha_, state);
-    publisher_->publish(marker_array);
-}
-private:
-TrajectoryVisualization tv_;
+// private:
+//     TrajectoryVisualization tv_;
 
-rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr publisher_;
-std::string ns_= "world";
-double alpha_ = 0.8;
-};
+//     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr publisher_;
+//     std::string ns_ = "world";
+//     double alpha_ = 0.8;
+// };
 
-int main(int argc, const char *const *argv){
-    rclcpp::init(argc,argv);
-    TrajectoryPublisher tp;
-    tp.parseUrdfFile("/home/up/robotics-manipulation/src/robot_description/urdf/robot.urdf");
-    Eigen::VectorXd state(6);
-    tp.update(state);
-    while(rclcpp::ok()){
-        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-    }
-    rclcpp::shutdown();
+int main(int argc, const char* const* argv) {
+    // rclcpp::init(argc, argv);
+    // TrajectoryPublisher tp;
+    // tp.parseUrdfFile("/home/up/robotics-manipulation/src/robot_description/urdf/robot.urdf");
+    // Eigen::VectorXd state(6);
+    // tp.update(state);
+    // while (rclcpp::ok()) {
+    //     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    // }
+    // rclcpp::shutdown();
+    namespace vu = visualization_utils;
+    std::string urdf_file = "/home/up/robotics-manipulation/src/robot_description/urdf/robot.urdf";
+    vu::TrajectoryVisualization tv(urdf_file);
+    std::unordered_map<std::string, double> joint_state_map;
+    joint_state_map["base_link-base_link_inertia"] = 0.0;
+    joint_state_map["shoulder_pan_joint"] = 0.0;
+    joint_state_map["shoulder_lift_joint"] = 0.0;
+    joint_state_map["elbow_joint"] = 0.0;
+    joint_state_map["wrist_1_joint"] = 0.0;
+    joint_state_map["wrist_2_joint"] = 0.0;
+    joint_state_map["wrist_3_joint"] = 0.0;
+    tv.getMarkerArray("tv", 0, 0.8, joint_state_map);
     return 0;
 }

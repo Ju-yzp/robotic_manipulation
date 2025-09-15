@@ -1,0 +1,41 @@
+digraph G {
+node [shape=box];
+"world" [label="world"];
+"base_link" [label="base_link"];
+"base" [label="base"];
+"base_link_inertia" [label="base_link_inertia"];
+"shoulder_link" [label="shoulder_link"];
+"upper_arm_link" [label="upper_arm_link"];
+"forearm_link" [label="forearm_link"];
+"wrist_1_link" [label="wrist_1_link"];
+"wrist_2_link" [label="wrist_2_link"];
+"wrist_3_link" [label="wrist_3_link"];
+"flange" [label="flange"];
+"tool0" [label="tool0"];
+"ft_frame" [label="ft_frame"];
+node [shape=ellipse, color=blue, fontcolor=blue];
+"world" -> "base_joint" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"base_joint" -> "base_link"
+"base_link" -> "base_link-base_fixed_joint" [label="xyz: 0 0 0 \nrpy: 0 -0 3.14159"]
+"base_link-base_fixed_joint" -> "base"
+"base_link" -> "base_link-base_link_inertia" [label="xyz: 0 0 0 \nrpy: 0 -0 3.14159"]
+"base_link-base_link_inertia" -> "base_link_inertia"
+"base_link_inertia" -> "shoulder_pan_joint" [label="xyz: 0 0 0.1625 \nrpy: 0 -0 0"]
+"shoulder_pan_joint" -> "shoulder_link"
+"shoulder_link" -> "shoulder_lift_joint" [label="xyz: 0 0 0 \nrpy: 1.5708 -0 0"]
+"shoulder_lift_joint" -> "upper_arm_link"
+"upper_arm_link" -> "elbow_joint" [label="xyz: -0.425 0 0 \nrpy: 0 -0 0"]
+"elbow_joint" -> "forearm_link"
+"forearm_link" -> "wrist_1_joint" [label="xyz: -0.3922 0 0.1333 \nrpy: 0 -0 0"]
+"wrist_1_joint" -> "wrist_1_link"
+"wrist_1_link" -> "wrist_2_joint" [label="xyz: 0 -0.0997 -2.04488e-11 \nrpy: 1.5708 -0 0"]
+"wrist_2_joint" -> "wrist_2_link"
+"wrist_2_link" -> "wrist_3_joint" [label="xyz: 0 0.0996 -2.04283e-11 \nrpy: -1.5708 1.22465e-16 -1.22465e-16"]
+"wrist_3_joint" -> "wrist_3_link"
+"wrist_3_link" -> "wrist_3-flange" [label="xyz: 0 0 0 \nrpy: 0 -1.5708 -1.5708"]
+"wrist_3-flange" -> "flange"
+"flange" -> "flange-tool0" [label="xyz: 0 0 0 \nrpy: 1.5708 -0 1.5708"]
+"flange-tool0" -> "tool0"
+"wrist_3_link" -> "wrist_3_link-ft_frame" [label="xyz: 0 0 0 \nrpy: 3.14159 -0 0"]
+"wrist_3_link-ft_frame" -> "ft_frame"
+}

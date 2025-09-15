@@ -80,14 +80,14 @@
            to correctly align 'base' with the 'Base' coordinate system of
            the UR controller.
       -->
-  <!-- <link name="base"/>
+  <link name="base"/>
   <joint name="base_link-base_fixed_joint" type="fixed">
 
     <origin rpy="0 0 3.141592653589793" xyz="0 0 0"/>
     <parent link="base_link"/>
     <child link="base"/>
-  </joint> -->
-  
+  </joint>
+
     <joint name="base_link-base_link_inertia" type="fixed">
     <parent link="base_link"/>
     <child link="base_link_inertia"/>

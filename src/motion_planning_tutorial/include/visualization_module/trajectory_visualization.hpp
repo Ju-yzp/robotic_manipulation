@@ -2,6 +2,7 @@
 #define VISUALIZATION_MODULE_TRAJECTORY_VISUALIZATION_HPP_
 
 // cpp
+#include <cmath>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -10,6 +11,7 @@
 
 // urdf
 #include <sys/types.h>
+#include <urdf/model.h>
 #include <urdf_model/link.h>
 #include <urdf_model/pose.h>
 #include <urdf_model/types.h>
@@ -21,66 +23,106 @@
 // eigen
 #include <Eigen/Eigen>
 
+// rclcpp
 #include <rclcpp/clock.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
+namespace visualization_utils {
+
+using namespace std;
+
 class TrajectoryVisualization {
 public:
     struct Link {
-        std::string name;
-        std::string mesh_file;
-        tf2::Transform link_to_fixed =
-            tf2::Transform(tf2::Quaternion(0.0, 0.0, 0.0, 1.0f), tf2::Vector3(0.0f, 0.0f, 0.0f));
-
-        tf2::Transform link_offest =
-            tf2::Transform(tf2::Quaternion(0.0, 0.0, 0.0, 1.0f), tf2::Vector3(0.0f, 0.0f, 0.0f));
+        Eigen::Matrix4d offest{Eigen::Matrix4d::Identity()};         // 姿态
+        Eigen::Matrix4d pose_to_fixed{Eigen::Matrix4d::Identity()};  // 相对于基坐标的位姿
+        string mesh_file{""};                                        // 纹理文件
+        string name;                                                 // 连杆名称
     };
+
+    enum class JointRotationAxis : uint8_t { X = 0, Y = 1, Z = 2 };
 
     struct Joint {
-        std::string name;
-        tf2::Transform tf;
-        std::vector<Link> child_links;
+        Eigen::Matrix4d origin_pose{Eigen::Matrix4d::Identity()};  // 关节原始位姿
+        Eigen::Matrix4d new_pose{Eigen::Matrix4d::Identity()};     // 变换后的新姿态
+        Link child_link;                                           // 子连杆
+        string name;                                               // 关节名称
+        vector<Joint*> child_joints;                               // 子关节
+
+        bool is_fixed{true};    // 固定关节标志
+        JointRotationAxis jra;  // 关节旋转类型
+
+        void update_state(const double angle) {
+            new_pose = origin_pose * get_tranform_matrix(angle);
+        }
+
+    private:
+        Eigen::Matrix4d get_tranform_matrix(const double angle) {
+            Eigen::Matrix4d transform_matrix;
+            if (jra == JointRotationAxis::X)
+                transform_matrix << 1.0, 0.0, 0.0, 0.0, 0.0, cos(angle), -sin(angle), 0.0, 0.0,
+                    sin(angle), cos(angle), 0.0, 0.0, 0.0, 0.0, 1.0;
+            else if (jra == JointRotationAxis::Y)
+                transform_matrix << cos(angle), 0.0, sin(angle), 0.0, 0.0, 1.0, 0.0, 0.0,
+                    -sin(angle), 0.0, cos(angle), 0.0, 0.0, 0.0, 0.0, 1.0;
+            else
+                transform_matrix << cos(angle), -sin(angle), 0.0, 0.0, sin(angle), cos(angle), 0.0,
+                    0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0;
+            return transform_matrix;
+        }
     };
 
-    TrajectoryVisualization(const std::string model_description) { loadModel(model_description); }
+    TrajectoryVisualization() = default;
 
-    TrajectoryVisualization() {}
+    TrajectoryVisualization(const string& model_description) { loadModel(model_description); }
 
-    // 加载机器人模型
-    void loadModel(const std::string& model_description);
+    ~TrajectoryVisualization() {
+        for (auto& joint : joints_) {
+            if (joint) delete joint;
+        }
 
-    visualization_msgs::msg::MarkerArray getMarkerArray(
-        std::string ns, int idx, double alpha, Eigen::VectorXd state);
+        joints_.clear();
+        root_joints_.clear();
+    }
 
-private:
-    // 更新关节位置
-    // void updatePositions(const Eigen::VectorXd& state);
-
-    visualization_msgs::msg::Marker getMarker(
-        int id, const std::string ns, double alpha, const Eigen::Matrix4d& T,
-        const std::string& mesh_file);
-
-    bool hasMeshFile(std::shared_ptr<const urdf::Link>& link, std::string& mesh_file);
-
-    // 是否已经完成初始化
-    bool is_initialized_ = false;
-
-    // 命名空间
-    std::string ns_;
-
-    // 机械臂连杆
-    std::vector<std::shared_ptr<urdf::Link>> links_;
+    // 解析urdf文件
+    void loadModel(const string& model_description);
 
     //
-    std::string geometry_type_ = "visual";
+    visualization_msgs::msg::MarkerArray getMarkerArray(
+        string ns, int idx, double alpha,
+        const std::unordered_map<std::string, double>& joint_state_pair);
 
-    std::map<uint32_t, Link> link_map_;
+private:
+    // 更新关节状态
+    void updateState(
+        const std::unordered_map<std::string, double>& joint_state_pair, Joint* joint,
+        Eigen::Matrix4d& tf);
 
-    std::unordered_map<uint32_t, Joint*> joint_map_;
+    // 获取marker,所有产生的marker的frame_id默认使用"map"
+    visualization_msgs::msg::Marker getMarker(
+        int id, const string ns, double alpha, const Eigen::Matrix4d& T, const string& mesh_file);
 
-    rclcpp::Clock clock_;
+    // 处理连杆，递归处理urdf文件，使用树状结构描述
+    void processJoint(
+        shared_ptr<urdf::Joint>& joint, const urdf::Model& model, Joint* parent_joint = nullptr,
+        bool is_root = false);
 
-    std::vector<Link> fixed_links_;
+    // 获取连杆的纹理文件信息
+    bool get_meshfile(shared_ptr<const urdf::Link>& link, string& mesh_file);
+
+    void get_link_pose(Link& link, shared_ptr<const urdf::Link>& urdf_link);
+
+    bool is_initialized_ = false;  // 是否初始化完成
+
+    string geometry_type_ = "visual";  // 几何类型
+
+    vector<Joint*> joints_;  // 关节
+
+    vector<Joint*> root_joints_;  // 基座关节
+
+    rclcpp::Clock clock_;  // ros2系统时钟（给rviz2使用的）
 };
+}  // namespace visualization_utils
 #endif  // VISUALIZATION_MODULE_TRAJECTORY_VISUALIZATION_HPP_

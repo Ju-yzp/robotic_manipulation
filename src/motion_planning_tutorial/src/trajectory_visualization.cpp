@@ -2,7 +2,6 @@
 #include <visualization_module/trajectory_visualization.hpp>
 
 // urdf
-
 #include <urdf/model.h>
 #include <urdf_model/joint.h>
 #include <urdf_model/link.h>
@@ -128,12 +127,13 @@ void TrajectoryVisualization::processJoint(
     joint->child_link = child_link;
 
     // 确定关节旋转类型,暂时不支持滑动和浮动类型
+    static constexpr double EPS = 1e-2;
     if (urdf_joint->type != urdf::Joint::FLOATING && urdf_joint->type != urdf::Joint::PRISMATIC &&
         urdf_joint->type != urdf::Joint::FIXED) {
         const auto axis = urdf_joint->axis;
-        if (axis.x > 1e-1)
+        if (axis.x > EPS)
             joint->jra = JointRotationAxis::X;
-        else if (axis.y < 1e-1)
+        else if (axis.y > EPS)
             joint->jra = JointRotationAxis::Y;
         else
             joint->jra = JointRotationAxis::Z;
@@ -192,7 +192,7 @@ bool TrajectoryVisualization::get_meshfile(shared_ptr<const urdf::Link>& link, s
     } else if (geometry_type_ == "collision") {
         geometry = link->collision ? link->collision->geometry : nullptr;
     } else {
-        cerr << "Invaild geometry type " << geometry_type_ << endl;
+        cerr << "Invalid geometry type " << geometry_type_ << endl;
         return false;
     }
 
@@ -370,18 +370,18 @@ void TrajectoryVisualization::get_link_pose(Link& link, shared_ptr<const urdf::L
 vector<TrajectoryVisualization::Link> TrajectoryVisualization::get_links(
     const vector<string>& joint_list) {
     vector<Link> link_list;
-    Joint* serached_joint = nullptr;
+    Joint* searched_joint = nullptr;
     for (auto joint_name : joint_list) {
-        if (get_joint(&serached_joint, joint_name) && !serached_joint->child_link.mesh_file.empty())
-            link_list.emplace_back(serached_joint->child_link);
+        if (get_joint(&searched_joint, joint_name) && !searched_joint->child_link.mesh_file.empty())
+            link_list.emplace_back(searched_joint->child_link);
     }
     return link_list;
 }
 
-bool TrajectoryVisualization::get_joint(Joint** serached_joint, const string joint_name) {
+bool TrajectoryVisualization::get_joint(Joint** searched_joint, const string joint_name) {
     for (const auto& joint : joints_)
         if (joint->name == joint_name) {
-            *serached_joint = joint;
+            *searched_joint = joint;
             return true;
         }
     return false;

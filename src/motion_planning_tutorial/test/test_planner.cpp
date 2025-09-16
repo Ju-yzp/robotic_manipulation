@@ -120,7 +120,7 @@ int main(int argc, const char* const* argv) {
     auto bspilne = controller.smoothPath(pd, timepoint, mpt::SmoothType::BASIC_SPLINE);
 
     double time_sum = bspilne.getTimeSum();
-    double time_step = time_sum / double(7);
+    double time_step = time_sum / double(20);
 
     rclcpp::init(argc, argv);
     TrajectoryPublisher tp;
@@ -135,7 +135,7 @@ int main(int argc, const char* const* argv) {
     joint_state_map["wrist_2_joint"] = 0.0;
     joint_state_map["wrist_3_joint"] = 0.0;
 
-    for (uint8_t i{0}; i < 7; ++i) {
+    for (uint8_t i{0}; i < 20; ++i) {
         auto positions = bspilne.evaluateDeBoor(time_step * (double)i);
         std::unordered_map<std::string, double> joint_state_map;
         joint_state_map["base_link-base_link_inertia"] = 0.0;

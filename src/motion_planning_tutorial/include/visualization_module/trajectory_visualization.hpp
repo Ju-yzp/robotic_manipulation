@@ -16,7 +16,6 @@ email: Jup230551@outlook.com
 #include <vector>
 
 // urdf
-#include <sys/types.h>
 #include <urdf/model.h>
 #include <urdf_model/link.h>
 #include <urdf_model/pose.h>
@@ -39,7 +38,7 @@ namespace visualization_utils {
 using namespace std;
 
 class TrajectoryVisualization {
-public:
+private:
     struct Link {
         Eigen::Matrix4d offest{Eigen::Matrix4d::Identity()};         // 姿态
         Eigen::Matrix4d pose_to_fixed{Eigen::Matrix4d::Identity()};  // 相对于基坐标的位姿
@@ -60,11 +59,11 @@ public:
         JointRotationAxis jra;  // 关节旋转类型
 
         void update_state(const double angle) {
-            new_pose = origin_pose * get_tranform_matrix(angle);
+            new_pose = origin_pose * get_transform_matrix(angle);
         }
 
     private:
-        Eigen::Matrix4d get_tranform_matrix(const double angle) {
+        Eigen::Matrix4d get_transform_matrix(const double angle) {
             Eigen::Matrix4d transform_matrix;
             if (jra == JointRotationAxis::X)
                 transform_matrix << 1.0, 0.0, 0.0, 0.0, 0.0, cos(angle), -sin(angle), 0.0, 0.0,
@@ -79,6 +78,7 @@ public:
         }
     };
 
+public:
     TrajectoryVisualization() = default;
 
     TrajectoryVisualization(const string& model_description) { loadModel(model_description); }
@@ -114,9 +114,13 @@ private:
         int id, const string ns, double alpha, const Eigen::Matrix4d& T, const string& mesh_file);
 
     // 处理连杆，递归处理urdf文件，使用树状结构描述
+    // void processJoint(
+    //     shared_ptr<urdf::Joint>& joint, const urdf::Model& model, Joint* parent_joint = nullptr,
+    //     bool is_root = false);
+
     void processJoint(
-        shared_ptr<urdf::Joint>& joint, const urdf::Model& model, Joint* parent_joint = nullptr,
-        bool is_root = false);
+        const shared_ptr<urdf::Joint>& urdf_joint, const urdf::Model& model,
+        Joint* joint = nullptr);
 
     // 获取连杆的纹理文件信息
     bool get_meshfile(shared_ptr<const urdf::Link>& link, string& mesh_file);

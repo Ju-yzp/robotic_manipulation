@@ -1,20 +1,25 @@
 // visualization_module
-#include <algorithm>
-#include <iterator>
 #include <visualization_module/trajectory_visualization.hpp>
 
 // urdf
-#include <Eigen/src/Geometry/Quaternion.h>
+
 #include <urdf/model.h>
 #include <urdf_model/joint.h>
 #include <urdf_model/link.h>
 #include <urdf_model/pose.h>
 #include <urdf_model/types.h>
 
+// eigen
+#include <Eigen/src/Core/Matrix.h>
+#include <Eigen/src/Geometry/Quaternion.h>
+
 // cpp
+#include <algorithm>
 #include <functional>
 #include <iostream>
+#include <iterator>
 #include <memory>
+#include <stack>
 
 namespace visualization_utils {
 
@@ -26,16 +31,62 @@ void TrajectoryVisualization::loadModel(const string& model_description) {
         auto root_link = model.getRoot();
         if (!root_link) return;
 
+        // TODO：递归可能会造成栈溢出行为的发生，后面会把全部递归操作重写，换成循环结合模拟栈行为
         auto child_joints = root_link->child_joints;
-        for (auto child_joint : child_joints) processJoint(child_joint, model, nullptr, true);
 
+        // // 递归版本(后面测试完循环版本后，会保留代码，分享一下自己的思路)
+        // for (auto child_joint : child_joints) processJoint(child_joint, model, nullptr, true);
+
+        // 循环版本:未测试，最好不要使用，作者对于这个还没有理解透彻
+
+        struct JointData {
+            Joint* joint;
+            shared_ptr<urdf::Joint> urdf_joint;
+        };
+        std::stack<JointData> joint_stack;
+        JointData jd;
+        for (auto child_joint : child_joints) {
+            Joint* joint = new Joint();
+            joint->name = child_joint->name;
+            root_joints_.emplace_back(joint);
+            joints_.emplace_back(joint);
+            jd.joint = joint;
+            jd.urdf_joint = child_joint;
+            joint_stack.push(jd);
+            processJoint(child_joint, model, joint);
+        }
+
+        while (!joint_stack.empty()) {
+            jd = joint_stack.top();
+            joint_stack.pop();
+            auto child_link = model.getLink(jd.urdf_joint->child_link_name);
+            child_joints = child_link->child_joints;
+            for (auto child_joint : child_joints) {
+                JointData jd_;
+                Joint* joint = new Joint();
+                jd.joint->child_joints.emplace_back(joint);
+                joint->name = child_joint->name;
+                joints_.emplace_back(joint);
+                jd_.joint = joint;
+                jd_.urdf_joint = child_joint;
+                joint_stack.push(jd_);
+                processJoint(child_joint, model, joint);
+            }
+        }
+
+        // TODO： 调试递归遍历树输出节点信息也会改成上面相同版本
+        // 递归版本（warning:尽量不要使用）
         // 从根节点开始遍历
-        // cout<<"--------Parse Test---------"<<endl;
+        // cout << "--------Parse Test---------" << endl;
+        // Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
         // function<void(Joint * joint)> iter_func = [&](Joint* joint) {
         //     if (joint) {
-        //         cout << "Joint name: " << joint->name << endl;
-        //         cout << "Child Link name: " << joint->child_link.name << endl;
-        //         cout << "Mesh file: " << joint->child_link.mesh_file << endl;
+        //         if (!joint->child_link.mesh_file.empty()) {
+        //             cout << "Joint name: " << joint->name << endl;
+        //             cout << "Child Link name: " << joint->child_link.name << endl;
+        //             cout << "Mesh file: " << joint->child_link.mesh_file << endl;
+        //             cout << joint->origin_pose.format(CleanFmt) << std::endl;
+        //         }
         //         cout << endl;
         //         for (auto child_joint : joint->child_joints) iter_func(child_joint);
         //     }
@@ -43,57 +94,96 @@ void TrajectoryVisualization::loadModel(const string& model_description) {
         // for (auto root_joint : root_joints_) {
         //     iter_func(root_joint);
         // }
+
+        // 普通循环替代递归版本(iterative version instead of recursive version)
+
     } else {
+        cout << __FILE__ << endl;
+        cout << __LINE__ << endl;
         cerr << "Failed to parse urdf file" << endl;
         return;
     }
 }
 
 void TrajectoryVisualization::processJoint(
-    shared_ptr<urdf::Joint>& joint, const urdf::Model& model, Joint* parent_joint, bool is_root) {
-    Joint* joint_struct = new Joint();
-    if (is_root) root_joints_.emplace_back(joint_struct);
+    const shared_ptr<urdf::Joint>& urdf_joint, const urdf::Model& model, Joint* joint) {
+    if (!joint) return;
 
-    joints_.emplace_back(joint_struct);
-    joint_struct->name = joint->name;
+    // 获取关节位姿信息
+    urdf::Pose joint_pose = urdf_joint->parent_to_joint_origin_transform;
+    const auto& rot = joint_pose.rotation;
+    const auto& pos = joint_pose.position;
+    Eigen::Quaterniond quad(rot.w, rot.x, rot.y, rot.z);
+    Eigen::Vector3d origin(pos.x, pos.y, pos.z);
+    joint->origin_pose.block(0, 0, 3, 3) = quad.toRotationMatrix();
+    joint->origin_pose.block(0, 3, 3, 1) = origin;
+    joint->new_pose = joint->origin_pose;
 
-    // 关节位姿
-    auto pose = joint->parent_to_joint_origin_transform;
-    Eigen::Quaterniond quad(pose.rotation.w, pose.rotation.x, pose.rotation.y, pose.rotation.z);
-    Eigen::Vector3d origin(pose.position.x, pose.position.y, pose.position.z);
-    joint_struct->origin_pose.block(0, 0, 3, 3) = quad.toRotationMatrix();
-    joint_struct->origin_pose.block(0, 3, 3, 1) = origin;
-    joint_struct->new_pose = joint_struct->origin_pose;
+    // 获取关节子连杆信息:位姿和纹理文件
+    Link child_link;
+    auto urdf_child_link = model.getLink(urdf_joint->child_link_name);
+    child_link.name = urdf_child_link->name;
+    get_link_pose(child_link, urdf_child_link);
+    get_meshfile(urdf_child_link, child_link.mesh_file);
+    joint->child_link = child_link;
 
-    auto child_link = model.getLink(joint->child_link_name);
-    // 获取子连杆位姿信息
-    Link link;
-    link.name = child_link->name;
-    get_link_pose(link, child_link);
-    // 尝试获取子连杆的纹理文件
-    if (!get_meshfile(child_link, link.mesh_file))
-        cerr << "No mesh file for link " << link.name << endl;
-    joint_struct->child_link = link;
-
-    // 如果关节不是固定的(我们默认关节只有旋转/固定，不支持移动基座)
-    if (joint->type != urdf::Joint::FIXED) {
-        joint_struct->is_fixed = false;
-        auto axis = joint->axis;
-        if (axis.x > 1e-2)
-            joint_struct->jra = JointRotationAxis::X;
-        else if (axis.y > 1e-2)
-            joint_struct->jra = JointRotationAxis::Y;
+    // 确定关节旋转类型,暂时不支持滑动和浮动类型
+    if (urdf_joint->type != urdf::Joint::FLOATING && urdf_joint->type != urdf::Joint::PRISMATIC &&
+        urdf_joint->type != urdf::Joint::FIXED) {
+        const auto axis = urdf_joint->axis;
+        if (axis.x > 1e-1)
+            joint->jra = JointRotationAxis::X;
+        else if (axis.y < 1e-1)
+            joint->jra = JointRotationAxis::Y;
         else
-            joint_struct->jra = JointRotationAxis::Z;
-    }
-
-    if (parent_joint) parent_joint->child_joints.emplace_back(joint_struct);
-
-    auto child_joints = child_link->child_joints;
-    for (auto child_joint : child_joints) {
-        processJoint(child_joint, model, joint_struct);
+            joint->jra = JointRotationAxis::Z;
     }
 }
+
+// void TrajectoryVisualization::processJoint(
+//     shared_ptr<urdf::Joint>& joint, const urdf::Model& model, Joint* parent_joint, bool is_root)
+//     { Joint* joint_struct = new Joint(); if (is_root) root_joints_.emplace_back(joint_struct);
+
+//     joints_.emplace_back(joint_struct);
+//     joint_struct->name = joint->name;
+
+//     // 关节位姿
+//     auto pose = joint->parent_to_joint_origin_transform;
+//     Eigen::Quaterniond quad(pose.rotation.w, pose.rotation.x, pose.rotation.y, pose.rotation.z);
+//     Eigen::Vector3d origin(pose.position.x, pose.position.y, pose.position.z);
+//     joint_struct->origin_pose.block(0, 0, 3, 3) = quad.toRotationMatrix();
+//     joint_struct->origin_pose.block(0, 3, 3, 1) = origin;
+//     joint_struct->new_pose = joint_struct->origin_pose;
+
+//     auto child_link = model.getLink(joint->child_link_name);
+//     // 获取子连杆位姿信息
+//     Link link;
+//     link.name = child_link->name;
+//     get_link_pose(link, child_link);
+//     // 尝试获取子连杆的纹理文件
+//     if (!get_meshfile(child_link, link.mesh_file))
+//         cerr << "No mesh file for link " << link.name << endl;
+//     joint_struct->child_link = link;
+
+//     // 如果关节不是固定的(我们默认关节只有旋转/固定，不支持移动基座)
+//     if (joint->type != urdf::Joint::FIXED) {
+//         joint_struct->is_fixed = false;
+//         auto axis = joint->axis;
+//         if (axis.x > 1e-2)
+//             joint_struct->jra = JointRotationAxis::X;
+//         else if (axis.y > 1e-2)
+//             joint_struct->jra = JointRotationAxis::Y;
+//         else
+//             joint_struct->jra = JointRotationAxis::Z;
+//     }
+
+//     if (parent_joint) parent_joint->child_joints.emplace_back(joint_struct);
+
+//     auto child_joints = child_link->child_joints;
+//     for (auto child_joint : child_joints) {
+//         processJoint(child_joint, model, joint_struct);
+//     }
+// }
 
 bool TrajectoryVisualization::get_meshfile(shared_ptr<const urdf::Link>& link, string& mesh_file) {
     urdf::GeometryConstSharedPtr geometry;
@@ -152,12 +242,50 @@ visualization_msgs::msg::MarkerArray TrajectoryVisualization::getMarkerArray(
     const std::unordered_map<std::string, double>& joint_state_pair) {
     visualization_msgs::msg::MarkerArray marker_array;
 
+    // 递归版本(unsafe)
     // 先更新关节位置
-    Eigen::Matrix4d tf = Eigen::Matrix4d::Identity();
-    for (auto& root_joint : root_joints_) {
-        updateState(joint_state_pair, root_joint, tf);
+    // Eigen::Matrix4d tf = Eigen::Matrix4d::Identity();
+    // for (auto& root_joint : root_joints_) {
+    //     updateState(joint_state_pair, root_joint, tf);
+    // }
+
+    // 循环版本
+
+    struct TransformData {
+        Joint* joint;
+        Eigen::Matrix4d tf{Eigen::Matrix4d::Identity()};
+    };
+    stack<TransformData> joint_stack;
+    TransformData td;
+
+    for (const auto& root_joint : root_joints_) {
+        td.tf = root_joint->origin_pose;
+        td.joint = root_joint;
+        joint_stack.push(td);
     }
 
+    while (!joint_stack.empty()) {
+        td = joint_stack.top();
+        joint_stack.pop();
+        auto& link = td.joint->child_link;
+        if (joint_state_pair.find(td.joint->name) != joint_state_pair.end() &&
+            !td.joint->is_fixed) {
+            double new_state = joint_state_pair.find(td.joint->name)->second;
+            td.joint->update_state(new_state);
+        } else
+            td.joint->new_pose = td.joint->origin_pose;
+
+        // 更新关节子连杆的位姿
+        td.tf *= td.joint->new_pose;
+        link.pose_to_fixed = td.tf * link.offest;
+
+        for (auto child_joint : td.joint->child_joints) {
+            TransformData td_;
+            td_.joint = child_joint;
+            td_.tf = td.tf * td_.tf;
+            joint_stack.push(td_);
+        }
+    }
     // 测试代码
     // Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
     // cout << "-------Update State Test--------" << std::endl;

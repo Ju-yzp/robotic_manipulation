@@ -100,13 +100,6 @@ int main(int argc, const char* const* argv) {
     }
 
     auto path = pd.get_initial_path();
-    for (const auto& state : path) {
-        std::cout << "State: ";
-        for (const auto& pos : state.positions) {
-            std::cout << pos << " ";
-        }
-        std::cout << std::endl;
-    }
 
     mpt::Controller controller(robot_description);
     controller.set_id_and_name(0, "shoulder_pan");

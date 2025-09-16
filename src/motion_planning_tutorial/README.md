@@ -5,6 +5,7 @@
 <p align="center">
   <img src="doc/trajectory_optimize.png" width = "400" height = "225"/>
    <img src="doc/motion_planning_demo.gif" width="400" />
+    <img src="doc/trajectory_visualization.png" width="400" height = "225"/>
 </p>
 
 ## Quick Start

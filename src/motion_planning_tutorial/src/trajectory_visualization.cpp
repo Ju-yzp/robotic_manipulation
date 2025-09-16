@@ -69,7 +69,7 @@ void TrajectoryVisualization::processJoint(
     // 获取子连杆位姿信息
     Link link;
     link.name = child_link->name;
-
+    get_link_pose(link,child_link);
     // 尝试获取子连杆的纹理文件
     if (!get_meshfile(child_link, link.mesh_file))
         cerr << "No mesh file for link " << link.name << endl;
@@ -187,7 +187,7 @@ visualization_msgs::msg::MarkerArray TrajectoryVisualization::getMarkerArray(
     // 把marker逐个添加至marker array中
     for (uint32_t index{0}; index < link_list.size(); ++index) {
         marker_array.markers.emplace_back(getMarker(
-            idx + index, ns, alpha, link_list[index].pose_to_fixed, link_list[index].mesh_file));
+            idx * link_list.size() + index, ns, alpha, link_list[index].pose_to_fixed, link_list[index].mesh_file));
         cout << link_list[index].mesh_file << endl;
     }
     return marker_array;

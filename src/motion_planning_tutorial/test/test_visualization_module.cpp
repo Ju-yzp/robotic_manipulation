@@ -11,9 +11,9 @@ public:
     }
     void parseUrdfFile(const std::string urdf_file) { tv_.loadModel(urdf_file); }
 
-    void update(std::unordered_map<std::string, double> joint_state_map) {
+    void update(std::unordered_map<std::string, double> joint_state_map,int idx) {
         publisher_->publish(
-            tv_.getMarkerArray("trajectory_visualization_test", 0, 0.8, joint_state_map));
+            tv_.getMarkerArray("trajectory_visualization_test", idx, 0.8, joint_state_map));
     }
 
 private:
@@ -35,7 +35,25 @@ int main(int argc, const char* const* argv) {
     joint_state_map["wrist_1_joint"] = 0.0;
     joint_state_map["wrist_2_joint"] = 0.0;
     joint_state_map["wrist_3_joint"] = 0.0;
-    tp.update(joint_state_map);
+    tp.update(joint_state_map,0);
+
+    joint_state_map["base_link-base_link_inertia"] = 1.3;
+    joint_state_map["shoulder_pan_joint"] = -0.4;
+    joint_state_map["shoulder_lift_joint"] = -0.5;
+    joint_state_map["elbow_joint"] = 0.7;
+    joint_state_map["wrist_1_joint"] = 0.8;
+    joint_state_map["wrist_2_joint"] = 1.0;
+    joint_state_map["wrist_3_joint"] = 1.0;
+    tp.update(joint_state_map, 1);
+
+    joint_state_map["base_link-base_link_inertia"] = 1.2;
+    joint_state_map["shoulder_pan_joint"] = -0.7;
+    joint_state_map["shoulder_lift_joint"] = -0.5;
+    joint_state_map["elbow_joint"] = 0.7;
+    joint_state_map["wrist_1_joint"] = 0.8;
+    joint_state_map["wrist_2_joint"] = -1.0;
+    joint_state_map["wrist_3_joint"] = 2.1;
+    tp.update(joint_state_map, 2);
     while (rclcpp::ok()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     }

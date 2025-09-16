@@ -13,5 +13,5 @@
 
 ## Contact Way
 
-- 📧 邮箱：Jup230551@outlook.com
+- 📧 Email：Jup230551@outlook.com
 - 🔗 GitHub：[![GitHub](https://img.shields.io/badge/GitHub-Ju-yzp)](https://github.com/Ju-yzp)

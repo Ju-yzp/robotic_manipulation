@@ -106,7 +106,7 @@
       <geometry>
          <!-- <mesh
     meshfile="file:$(find robot_description)/meshes/meshes/ur5e/collision/base.stl"
-    meshscale="1 1 1" 
+    meshscale="1 1 1"
  /> -->
         <mesh filename="package://robot_description/meshes/ur5e/collision/base.stl"/>
       </geometry>
@@ -129,7 +129,7 @@
       <geometry>
                  <!-- <mesh
     meshfile="file:$(find robot_description)/meshes/ur5e/collision/shoulder.stl"
-    meshscale="1 1 1" 
+    meshscale="1 1 1"
  /> -->
         <mesh filename="package://robot_description/meshes/ur5e/collision/shoulder.stl"/>
       </geometry>
@@ -152,7 +152,7 @@
       <geometry>
                  <!-- <mesh
     meshfile="file:$(find robot_description)/meshes/meshes/ur5e/collision/upperarm.stl"
-    meshscale="1 1 1" 
+    meshscale="1 1 1"
  /> -->
         <mesh filename="package://robot_description/meshes/ur5e/collision/upperarm.stl"/>
       </geometry>
@@ -176,7 +176,7 @@
       <geometry>
                  <!-- <mesh
     meshfile="file:$(find robot_description)/meshes/ur5e/collision/forearm.stl"
-    meshscale="1 1 1" 
+    meshscale="1 1 1"
  /> -->
         <mesh filename="package://robot_description/meshes/ur5e/collision/forearm.stl"/>
       </geometry>
@@ -199,7 +199,7 @@
       <geometry>
                  <!-- <mesh
     meshfile="file:$(find robot_description)/meshes/ur5e/collision/wrist1.stl"
-    meshscale="1 1 1" 
+    meshscale="1 1 1"
  /> -->
         <mesh filename="package://robot_description/meshes/ur5e/collision/wrist1.stl"/>
       </geometry>
@@ -222,7 +222,7 @@
       <geometry>
                  <!-- <mesh
     meshfile="file:$(find robot_description)/meshes/ur5e/collision/wrist2.stl"
-    meshscale="1 1 1" 
+    meshscale="1 1 1"
  /> -->
         <mesh filename="package://robot_description/meshes/ur5e/collision/wrist2.stl"/>
       </geometry>
@@ -245,7 +245,7 @@
       <geometry>
                  <!-- <mesh
     meshfile="file:$(find robot_description)/meshes/ur5e/collision/wrist3.stl"
-    meshscale="1 1 1" 
+    meshscale="1 1 1"
  /> -->
         <!-- <mesh filename="package://robot_description/meshes/ur5e/collision/wrist3.stl"/> -->
       </geometry>

@@ -7,11 +7,11 @@
    <img src="doc/motion_planning_demo.gif" width="400" />
 </p>
 
-
 ## Quick Start
 
-```
+```sh
 git clone https://github.com/Ju-yzp/robotic_manipulation.git
 cd robotic_manipulation
 colcon build
+source install/setup.bash #加载环境变量,避免包路径没有被设置，导致纹理文件无法加载
 ```

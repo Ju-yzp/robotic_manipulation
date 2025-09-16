@@ -79,9 +79,9 @@ void TrajectoryVisualization::processJoint(
     if (joint->type != urdf::Joint::FIXED) {
         joint_struct->is_fixed = false;
         auto axis = joint->axis;
-        if (axis.x)
+        if (axis.x > 1e-2)
             joint_struct->jra = JointRotationAxis::X;
-        else if (axis.y)
+        else if (axis.y > 1e-2)
             joint_struct->jra = JointRotationAxis::Y;
         else
             joint_struct->jra = JointRotationAxis::Z;
@@ -124,7 +124,7 @@ visualization_msgs::msg::Marker TrajectoryVisualization::getMarker(
     Eigen::Quaterniond quad;
     quad = rotation_matrix;
     visualization_msgs::msg::Marker meshMarker;
-    meshMarker.header.frame_id = "world";
+    meshMarker.header.frame_id = "map";
     meshMarker.header.stamp = clock_.now();
     meshMarker.ns = ns;
     meshMarker.id = id;
@@ -162,7 +162,7 @@ visualization_msgs::msg::MarkerArray TrajectoryVisualization::getMarkerArray(
     Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
     cout << "-------Update State Test--------" << std::endl;
     function<void(Joint * joint)> iter_func = [&](Joint* joint) {
-        if (joint&&!joint->child_link.mesh_file.empty()) {
+        if (joint && !joint->child_link.mesh_file.empty()) {
             cout << "Joint name: " << joint->name << endl;
             cout << "Child Link name: " << joint->child_link.name << endl;
             cout << "Mesh file: " << joint->child_link.mesh_file << endl;
@@ -183,11 +183,12 @@ visualization_msgs::msg::MarkerArray TrajectoryVisualization::getMarkerArray(
 
     vector<Link> link_list = get_links(joint_list);
 
-    cout<<"Link size is "<<int(link_list.size())<<std::endl;
+    cout << "Link size is " << int(link_list.size()) << std::endl;
     // 把marker逐个添加至marker array中
     for (uint32_t index{0}; index < link_list.size(); ++index) {
-        marker_array.markers.emplace_back(getMarker(idx + index, ns, alpha, link_list[index].pose_to_fixed, link_list[index].mesh_file));
-        cout<<link_list[index].mesh_file<<endl;
+        marker_array.markers.emplace_back(getMarker(
+            idx + index, ns, alpha, link_list[index].pose_to_fixed, link_list[index].mesh_file));
+        cout << link_list[index].mesh_file << endl;
     }
     return marker_array;
 }
@@ -201,7 +202,8 @@ void TrajectoryVisualization::updateState(
     if (joint_state_pair.find(joint->name) != joint_state_pair.end() && !joint->is_fixed) {
         double new_state = joint_state_pair.find(joint->name)->second;
         joint->update_state(new_state);
-    }else joint->new_pose = joint->origin_pose;
+    } else
+        joint->new_pose = joint->origin_pose;
 
     // 更新关节子连杆的位姿
     tf *= joint->new_pose;

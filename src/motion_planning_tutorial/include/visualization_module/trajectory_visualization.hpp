@@ -94,8 +94,8 @@ public:
         string ns, int idx, double alpha,
         const std::unordered_map<std::string, double>& joint_state_pair);
 
-    // 设置几何类型
-    void set_geometry_type(const string geometry_type){ geometry_type_ = geometry_type; }
+    // 设置几何类型(需要在加载模型信息之前设置，否则在之后设置的都不会产生效果)
+    void set_geometry_type(const string geometry_type) { geometry_type_ = geometry_type; }
 
 private:
     // 更新关节状态
@@ -103,7 +103,7 @@ private:
         const std::unordered_map<std::string, double>& joint_state_pair, Joint* joint,
         Eigen::Matrix4d tf);
 
-    // 获取marker,所有产生的marker的frame_id默认使用"map"
+    // 获取marker,所有产生的marker的frame_id默认使用"map"(rviz2默认frame)
     visualization_msgs::msg::Marker getMarker(
         int id, const string ns, double alpha, const Eigen::Matrix4d& T, const string& mesh_file);
 
@@ -126,7 +126,8 @@ private:
 
     bool is_initialized_ = false;  // 是否初始化完成
 
-    string geometry_type_ = "visual";  // 几何类型
+    string geometry_type_ =
+        "visual";  // 几何类型(从哪个标签中获取，visual含有颜色信息，而collison仅仅是粗略网格文件)
 
     vector<Joint*> joints_;  // 关节
 

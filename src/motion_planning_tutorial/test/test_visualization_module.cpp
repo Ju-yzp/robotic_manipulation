@@ -7,21 +7,19 @@ class TrajectoryPublisher : public rclcpp::Node {
 public:
     TrajectoryPublisher() : Node("trajectory_publisher") {
         publisher_ =
-            this->create_publisher<visualization_msgs::msg::MarkerArray>("trajectory_marker",
-            10);
+            this->create_publisher<visualization_msgs::msg::MarkerArray>("trajectory_marker", 10);
     }
     void parseUrdfFile(const std::string urdf_file) { tv_.loadModel(urdf_file); }
 
     void update(std::unordered_map<std::string, double> joint_state_map) {
-        publisher_->publish(tv_.getMarkerArray("trajectory_visualization_test", 0, 0.8, joint_state_map));
+        publisher_->publish(
+            tv_.getMarkerArray("trajectory_visualization_test", 0, 0.8, joint_state_map));
     }
 
 private:
     vu::TrajectoryVisualization tv_;
 
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr publisher_;
-    std::string ns_ = "world";
-    double alpha_ = 0.8;
 };
 
 int main(int argc, const char* const* argv) {
@@ -42,6 +40,6 @@ int main(int argc, const char* const* argv) {
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     }
     rclcpp::shutdown();
-    
+
     return 0;
 }

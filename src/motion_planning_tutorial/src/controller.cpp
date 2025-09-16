@@ -42,29 +42,29 @@ NonUniformBspline Controller::smoothPath(
     non_uniform_bspline.set_knot(knot);
     non_uniform_bspline.set_has_acceleration_limit(true);
 
-    while (!non_uniform_bspline.checkFeasiblity() && !non_uniform_bspline.reallocateTime()) {
-        double timesum = non_uniform_bspline.getTimeSum();
-        std::cout << "Time sum: " << timesum << std::endl;
-    }
-    double timesum = non_uniform_bspline.getTimeSum();
-    std::cout << "Time sum: " << timesum << std::endl;
+    while (!non_uniform_bspline.checkFeasiblity()) non_uniform_bspline.reallocateTime();
+    // double timesum = non_uniform_bspline.getTimeSum();
+    // std::cout << "Time sum: " << timesum << std::endl;
+
+    // double timesum = non_uniform_bspline.getTimeSum();
+    // std::cout << "Time sum: " << timesum << std::endl;
 
     // 采样，然后写入文件
-    int max_sample_count = 16000;
-    double time_step = timesum / double(max_sample_count);
-    std::ofstream outFile(
-        "/home/up/motion_planning/python_tool/statistic_data.txt", std::ios::trunc);
-    for (int i{0}; i < max_sample_count; i++) {
-        Eigen::VectorXd sample_point = non_uniform_bspline.evaluateDeBoor(time_step * i);
-        std::ofstream outFile(
-            "/home/up/motion_planning/python_tool/statistic_data.txt", std::ios::app);
-        if (outFile.is_open()) {
-            outFile << i * time_step << " " << sample_point(0) << " " << sample_point(1) << " "
-                    << sample_point(2) << " " << sample_point(3) << " " << sample_point(4) << " "
-                    << sample_point(5) << std::endl;
-            outFile.close();
-        }
-    }
+    // int max_sample_count = 16000;
+    // double time_step = timesum / double(max_sample_count);
+    // std::ofstream outFile(
+    //     "/home/up/motion_planning/python_tool/statistic_data.txt", std::ios::trunc);
+    // for (int i{0}; i < max_sample_count; i++) {
+    //     Eigen::VectorXd sample_point = non_uniform_bspline.evaluateDeBoor(time_step * i);
+    //     std::ofstream outFile(
+    //         "/home/up/motion_planning/python_tool/statistic_data.txt", std::ios::app);
+    //     if (outFile.is_open()) {
+    //         outFile << i * time_step << " " << sample_point(0) << " " << sample_point(1) << " "
+    //                 << sample_point(2) << " " << sample_point(3) << " " << sample_point(4) << " "
+    //                 << sample_point(5) << std::endl;
+    //         outFile.close();
+    //     }
+    // }
     return non_uniform_bspline;
 }
 

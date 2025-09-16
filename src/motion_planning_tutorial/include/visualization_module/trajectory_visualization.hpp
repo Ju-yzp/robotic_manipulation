@@ -1,5 +1,5 @@
 /*
-Description: 
+Description:
 Author: Jup
 email: Jup230551@outlook.com
 */
@@ -133,7 +133,7 @@ private:
     bool is_initialized_ = false;  // 是否初始化完成
 
     string geometry_type_ =
-        "visual";  // 几何类型(从哪个标签中获取，visual含有颜色信息，而collison仅仅是粗略网格文件)
+        "visual";  // 几何类型(从哪个标签中获取，visual含有颜色信息，而collison仅仅是粗略网格文件)，默认使用visual
 
     vector<Joint*> joints_;  // 关节
 

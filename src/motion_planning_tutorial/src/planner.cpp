@@ -83,7 +83,7 @@ void Planner::solve(
 
         count++;
 
-        std::cout << count << std::endl;
+        // std::cout << count << std::endl;
         int num{2};
 
         const auto& st = nearest_node->state;

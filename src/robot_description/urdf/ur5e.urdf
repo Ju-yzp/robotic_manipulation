@@ -247,7 +247,7 @@
     meshfile="file:$(find robot_description)/meshes/ur5e/collision/wrist3.stl"
     meshscale="1 1 1"
  /> -->
-        <!-- <mesh filename="package://robot_description/meshes/ur5e/collision/wrist3.stl"/> -->
+        <mesh filename="package://robot_description/meshes/ur5e/collision/wrist3.stl"/>
       </geometry>
     </collision>
     <inertial>

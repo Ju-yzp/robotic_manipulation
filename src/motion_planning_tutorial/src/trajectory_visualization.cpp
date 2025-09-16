@@ -69,7 +69,7 @@ void TrajectoryVisualization::processJoint(
     // 获取子连杆位姿信息
     Link link;
     link.name = child_link->name;
-    get_link_pose(link,child_link);
+    get_link_pose(link, child_link);
     // 尝试获取子连杆的纹理文件
     if (!get_meshfile(child_link, link.mesh_file))
         cerr << "No mesh file for link " << link.name << endl;
@@ -159,21 +159,21 @@ visualization_msgs::msg::MarkerArray TrajectoryVisualization::getMarkerArray(
     }
 
     // 测试代码
-    Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
-    cout << "-------Update State Test--------" << std::endl;
-    function<void(Joint * joint)> iter_func = [&](Joint* joint) {
-        if (joint && !joint->child_link.mesh_file.empty()) {
-            cout << "Joint name: " << joint->name << endl;
-            cout << "Child Link name: " << joint->child_link.name << endl;
-            cout << "Mesh file: " << joint->child_link.mesh_file << endl;
-            cout << joint->child_link.pose_to_fixed.format(CleanFmt) << std::endl;
-            cout << endl;
-        }
-        for (auto child_joint : joint->child_joints) iter_func(child_joint);
-    };
-    for (auto root_joint : root_joints_) {
-        iter_func(root_joint);
-    }
+    // Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+    // cout << "-------Update State Test--------" << std::endl;
+    // function<void(Joint * joint)> iter_func = [&](Joint* joint) {
+    //     if (joint && !joint->child_link.mesh_file.empty()) {
+    //         cout << "Joint name: " << joint->name << endl;
+    //         cout << "Child Link name: " << joint->child_link.name << endl;
+    //         cout << "Mesh file: " << joint->child_link.mesh_file << endl;
+    //         cout << joint->child_link.pose_to_fixed.format(CleanFmt) << std::endl;
+    //         cout << endl;
+    //     }
+    //     for (auto child_joint : joint->child_joints) iter_func(child_joint);
+    // };
+    // for (auto root_joint : root_joints_) {
+    //     iter_func(root_joint);
+    // }
 
     vector<string> joint_list;
     joint_list.reserve(joint_state_pair.size() + 2);
@@ -183,12 +183,13 @@ visualization_msgs::msg::MarkerArray TrajectoryVisualization::getMarkerArray(
 
     vector<Link> link_list = get_links(joint_list);
 
-    cout << "Link size is " << int(link_list.size()) << std::endl;
-    // 把marker逐个添加至marker array中
+    // cout << "Link size is " << int(link_list.size()) << std::endl;
+    //  把marker逐个添加至marker array中
     for (uint32_t index{0}; index < link_list.size(); ++index) {
         marker_array.markers.emplace_back(getMarker(
-            idx * link_list.size() + index, ns, alpha, link_list[index].pose_to_fixed, link_list[index].mesh_file));
-        cout << link_list[index].mesh_file << endl;
+            idx * link_list.size() + index, ns, alpha, link_list[index].pose_to_fixed,
+            link_list[index].mesh_file));
+        // cout << link_list[index].mesh_file << endl;
     }
     return marker_array;
 }

@@ -42,7 +42,7 @@ def generate_launch_description():
         default_value=PathJoinSubstitution([
             FindPackageShare('robot_description'),  # 替换为实际包名
             'urdf',
-            'robot.urdf'
+            'ur5e.urdf'
         ]),
         description='URDF文件的路径'
     )

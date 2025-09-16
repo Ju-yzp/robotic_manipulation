@@ -13,10 +13,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(MUJOCO_FOLDER /usr/local/lib/cmake)
-find_package(mujoco REQUIRED PATHS ${MUJOCO_FOLDER} NO_DEFAULT_PATH)
-find_package(OpenGL REQUIRED)
-find_package(glfw3 REQUIRED)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
@@ -58,24 +54,6 @@ target_include_directories(
   controller PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
                     ${Eigen3_INCLUDE_DIRS})
 
-add_executable(test_planner test/test_planner.cpp src/ur5e_kinematic.cpp
-                            src/collision_detector.cpp src/planner.cpp)
-
-target_include_directories(
-  test_planner PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-                       ${Eigen3_INCLUDE_DIRS})
-
-target_link_libraries(
-  test_planner
-  PRIVATE Eigen3::Eigen
-          robot_description
-          ikd_Tree
-          controller
-          mujoco::mujoco
-          GL
-          GLU
-          glfw)
-
 add_library(VisualizationModule src/trajectory_visualization.cpp)
 
 target_include_directories(
@@ -89,12 +67,19 @@ target_link_libraries(
   PUBLIC ${urdf_LIBRARIES} ${tf2_LIBRARIES} ${visualization_msgs_LIBRARIES}
          ${rclcpp_LIBRARIES} Eigen3::Eigen)
 
-add_executable(test_trajectory_visualization test/test_visualization_module.cpp)
+add_executable(test_planner test/test_planner.cpp src/ur5e_kinematic.cpp
+                            src/collision_detector.cpp src/planner.cpp)
 
-target_link_libraries(test_trajectory_visualization PRIVATE VisualizationModule)
+target_include_directories(
+  test_planner PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+                       ${Eigen3_INCLUDE_DIRS})
+
+target_link_libraries(
+  test_planner PRIVATE Eigen3::Eigen robot_description ikd_Tree controller
+                       VisualizationModule)
+
 install(
   TARGETS robot_description ikd_Tree VisualizationModule test_planner
-          test_trajectory_visualization
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)

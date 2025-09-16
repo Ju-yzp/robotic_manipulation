@@ -104,6 +104,10 @@
     <collision>
       <origin rpy="0 0 3.141592653589793" xyz="0 0 0"/>
       <geometry>
+         <!-- <mesh
+    meshfile="file:$(find robot_description)/meshes/meshes/ur5e/collision/base.stl"
+    meshscale="1 1 1" 
+ /> -->
         <mesh filename="package://robot_description/meshes/ur5e/collision/base.stl"/>
       </geometry>
     </collision>
@@ -123,6 +127,10 @@
     <collision>
       <origin rpy="0 0 3.141592653589793" xyz="0 0 0"/>
       <geometry>
+                 <!-- <mesh
+    meshfile="file:$(find robot_description)/meshes/ur5e/collision/shoulder.stl"
+    meshscale="1 1 1" 
+ /> -->
         <mesh filename="package://robot_description/meshes/ur5e/collision/shoulder.stl"/>
       </geometry>
     </collision>
@@ -142,6 +150,10 @@
     <collision>
       <origin rpy="1.5707963267948966 0 -1.5707963267948966" xyz="0 0 0.138"/>
       <geometry>
+                 <!-- <mesh
+    meshfile="file:$(find robot_description)/meshes/meshes/ur5e/collision/upperarm.stl"
+    meshscale="1 1 1" 
+ /> -->
         <mesh filename="package://robot_description/meshes/ur5e/collision/upperarm.stl"/>
       </geometry>
     </collision>
@@ -162,6 +174,10 @@
     <collision>
       <origin rpy="1.5707963267948966 0 -1.5707963267948966" xyz="0 0 0.007"/>
       <geometry>
+                 <!-- <mesh
+    meshfile="file:$(find robot_description)/meshes/ur5e/collision/forearm.stl"
+    meshscale="1 1 1" 
+ /> -->
         <mesh filename="package://robot_description/meshes/ur5e/collision/forearm.stl"/>
       </geometry>
     </collision>
@@ -181,6 +197,10 @@
     <collision>
       <origin rpy="1.5707963267948966 0 0" xyz="0 0 -0.127"/>
       <geometry>
+                 <!-- <mesh
+    meshfile="file:$(find robot_description)/meshes/ur5e/collision/wrist1.stl"
+    meshscale="1 1 1" 
+ /> -->
         <mesh filename="package://robot_description/meshes/ur5e/collision/wrist1.stl"/>
       </geometry>
     </collision>
@@ -200,6 +220,10 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 -0.0997"/>
       <geometry>
+                 <!-- <mesh
+    meshfile="file:$(find robot_description)/meshes/ur5e/collision/wrist2.stl"
+    meshscale="1 1 1" 
+ /> -->
         <mesh filename="package://robot_description/meshes/ur5e/collision/wrist2.stl"/>
       </geometry>
     </collision>
@@ -219,7 +243,11 @@
     <collision>
       <origin rpy="1.5707963267948966 0 0" xyz="0 0 -0.0989"/>
       <geometry>
-        <mesh filename="package://robot_description/meshes/ur5e/collision/wrist3.stl"/>
+                 <!-- <mesh
+    meshfile="file:$(find robot_description)/meshes/ur5e/collision/wrist3.stl"
+    meshscale="1 1 1" 
+ /> -->
+        <!-- <mesh filename="package://robot_description/meshes/ur5e/collision/wrist3.stl"/> -->
       </geometry>
     </collision>
     <inertial>

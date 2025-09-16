@@ -63,6 +63,7 @@ void TrajectoryVisualization::processJoint(
     Eigen::Vector3d origin(pose.position.x, pose.position.y, pose.position.z);
     joint_struct->origin_pose.block(0, 0, 3, 3) = quad.toRotationMatrix();
     joint_struct->origin_pose.block(0, 3, 3, 1) = origin;
+    joint_struct->new_pose = joint_struct->origin_pose;
 
     auto child_link = model.getLink(joint->child_link_name);
     // 获取子连杆位姿信息
@@ -123,7 +124,7 @@ visualization_msgs::msg::Marker TrajectoryVisualization::getMarker(
     Eigen::Quaterniond quad;
     quad = rotation_matrix;
     visualization_msgs::msg::Marker meshMarker;
-    meshMarker.header.frame_id = "map";
+    meshMarker.header.frame_id = "world";
     meshMarker.header.stamp = clock_.now();
     meshMarker.ns = ns;
     meshMarker.id = id;
@@ -158,21 +159,21 @@ visualization_msgs::msg::MarkerArray TrajectoryVisualization::getMarkerArray(
     }
 
     // 测试代码
-    // Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
-    // cout << "-------Update State Test--------" << std::endl;
-    // function<void(Joint * joint)> iter_func = [&](Joint* joint) {
-    //     if (joint&&!joint->child_link.mesh_file.empty()) {
-    //         cout << "Joint name: " << joint->name << endl;
-    //         cout << "Child Link name: " << joint->child_link.name << endl;
-    //         cout << "Mesh file: " << joint->child_link.mesh_file << endl;
-    //         cout << joint->child_link.pose_to_fixed.format(CleanFmt) << std::endl;
-    //         cout << endl;
-    //     }
-    //     for (auto child_joint : joint->child_joints) iter_func(child_joint);
-    // };
-    // for (auto root_joint : root_joints_) {
-    //     iter_func(root_joint);
-    // }
+    Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+    cout << "-------Update State Test--------" << std::endl;
+    function<void(Joint * joint)> iter_func = [&](Joint* joint) {
+        if (joint&&!joint->child_link.mesh_file.empty()) {
+            cout << "Joint name: " << joint->name << endl;
+            cout << "Child Link name: " << joint->child_link.name << endl;
+            cout << "Mesh file: " << joint->child_link.mesh_file << endl;
+            cout << joint->child_link.pose_to_fixed.format(CleanFmt) << std::endl;
+            cout << endl;
+        }
+        for (auto child_joint : joint->child_joints) iter_func(child_joint);
+    };
+    for (auto root_joint : root_joints_) {
+        iter_func(root_joint);
+    }
 
     vector<string> joint_list;
     joint_list.reserve(joint_state_pair.size() + 2);
@@ -182,8 +183,11 @@ visualization_msgs::msg::MarkerArray TrajectoryVisualization::getMarkerArray(
 
     vector<Link> link_list = get_links(joint_list);
 
+    cout<<"Link size is "<<int(link_list.size())<<std::endl;
     // 把marker逐个添加至marker array中
     for (uint32_t index{0}; index < link_list.size(); ++index) {
+        marker_array.markers.emplace_back(getMarker(idx + index, ns, alpha, link_list[index].pose_to_fixed, link_list[index].mesh_file));
+        cout<<link_list[index].mesh_file<<endl;
     }
     return marker_array;
 }
@@ -197,10 +201,10 @@ void TrajectoryVisualization::updateState(
     if (joint_state_pair.find(joint->name) != joint_state_pair.end() && !joint->is_fixed) {
         double new_state = joint_state_pair.find(joint->name)->second;
         joint->update_state(new_state);
-    }
+    }else joint->new_pose = joint->origin_pose;
 
     // 更新关节子连杆的位姿
-    tf *= joint->origin_pose;
+    tf *= joint->new_pose;
     link.pose_to_fixed = tf * link.offest;
 
     for (auto child_joint : joint->child_joints) updateState(joint_state_pair, child_joint, tf);
@@ -235,18 +239,18 @@ void TrajectoryVisualization::get_link_pose(Link& link, shared_ptr<const urdf::L
 vector<TrajectoryVisualization::Link> TrajectoryVisualization::get_links(
     const vector<string>& joint_list) {
     vector<Link> link_list;
-    Joint* serached_joint;
+    Joint* serached_joint = nullptr;
     for (auto joint_name : joint_list) {
-        if (get_joint(serached_joint, joint_name) && !serached_joint->child_link.mesh_file.empty())
+        if (get_joint(&serached_joint, joint_name) && !serached_joint->child_link.mesh_file.empty())
             link_list.emplace_back(serached_joint->child_link);
     }
     return link_list;
 }
 
-bool TrajectoryVisualization::get_joint(Joint* serached_joint, const string joint_name) {
+bool TrajectoryVisualization::get_joint(Joint** serached_joint, const string joint_name) {
     for (const auto& joint : joints_)
         if (joint->name == joint_name) {
-            serached_joint = joint;
+            *serached_joint = joint;
             return true;
         }
     return false;

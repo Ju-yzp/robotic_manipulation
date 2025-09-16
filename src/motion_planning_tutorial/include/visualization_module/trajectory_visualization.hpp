@@ -89,10 +89,13 @@ public:
     // 解析urdf文件
     void loadModel(const string& model_description);
 
-    //
+    // 获取MarkerArray，传入命名空间、索引、透明值、需要添加的关节以及其状态等参数
     visualization_msgs::msg::MarkerArray getMarkerArray(
         string ns, int idx, double alpha,
         const std::unordered_map<std::string, double>& joint_state_pair);
+
+    // 设置几何类型
+    void set_geometry_type(const string geometry_type){ geometry_type_ = geometry_type; }
 
 private:
     // 更新关节状态
@@ -119,7 +122,7 @@ private:
     vector<Link> get_links(const vector<string>& joint_list);
 
     // 获取关节
-    bool get_joint(Joint* serached_joint, const string joint_name);
+    bool get_joint(Joint** serached_joint, const string joint_name);
 
     bool is_initialized_ = false;  // 是否初始化完成
 

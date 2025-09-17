@@ -8,6 +8,12 @@
     <img src="doc/trajectory_visualization.png" width="400" height = "225"/>
 </p>
 
+## Framework Design
+
+<p align="center">
+  <img src="doc/framework_design.png" />
+</p>
+
 ## Quick Start
 
 ```sh

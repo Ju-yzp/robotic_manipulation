@@ -310,6 +310,7 @@ visualization_msgs::msg::MarkerArray TrajectoryVisualization::getMarkerArray(
             joint_stack.push(td_);
         }
     }
+
     // 测试代码
     // if (show) {
     //     Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");

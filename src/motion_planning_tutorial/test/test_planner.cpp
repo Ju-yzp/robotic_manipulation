@@ -140,9 +140,11 @@ int main(int argc, const char* const* argv) {
         joint_state_map["wrist_3_joint"] = positions(5);
         tp.update(joint_state_map, i);
     }
+
     while (rclcpp::ok()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
+
     rclcpp::shutdown();
     return 0;
 }

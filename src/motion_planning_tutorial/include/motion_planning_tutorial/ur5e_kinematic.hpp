@@ -18,6 +18,7 @@ email: Jup230551@outlook.com
 namespace motion_planning_tutorial {
 
 using Ur5eParam = std::array<double, 6>;
+
 class Ur5eKinematic : virtual public KinematicBaseInterface {
 public:
     Ur5eKinematic(const Ur5eParam at, const Ur5eParam dt, const Ur5eParam apt, const Ur5eParam tht)

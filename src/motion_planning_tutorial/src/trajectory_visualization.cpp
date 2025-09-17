@@ -14,7 +14,6 @@
 
 // cpp
 #include <algorithm>
-#include <functional>
 #include <iostream>
 #include <iterator>
 #include <memory>
@@ -22,7 +21,7 @@
 
 namespace visualization_utils {
 
-void TrajectoryVisualization::loadModel(const string& model_description) {
+void TrajectoryVisualization::loadModel(const string& model_description, bool show) {
     if (is_initialized_) return;
 
     urdf::Model model;
@@ -30,14 +29,17 @@ void TrajectoryVisualization::loadModel(const string& model_description) {
         auto root_link = model.getRoot();
         if (!root_link) return;
 
-        // TODO：递归可能会造成栈溢出行为的发生，后面会把全部递归操作重写，换成循环结合模拟栈行为
+        /*
+         * TODO：递归可能会造成栈溢出行为的发生，后面会把全部递归操作重写，换成循环结合模拟栈行为，
+         * 使用局部变量存储信息，相对于递归会降低栈的使用容量
+         */
+
         auto child_joints = root_link->child_joints;
 
         // // 递归版本(后面测试完循环版本后，会保留代码，分享一下自己的思路)
         // for (auto child_joint : child_joints) processJoint(child_joint, model, nullptr, true);
 
-        // 循环版本:未测试，最好不要使用，作者对于这个还没有理解透彻
-
+        // 循环版本
         struct JointData {
             Joint* joint;
             shared_ptr<urdf::Joint> urdf_joint;
@@ -76,26 +78,48 @@ void TrajectoryVisualization::loadModel(const string& model_description) {
         // TODO： 调试递归遍历树输出节点信息也会改成上面相同版本
         // 递归版本（warning:尽量不要使用）
         // 从根节点开始遍历
-        // cout << "--------Parse Test---------" << endl;
-        // Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
-        // function<void(Joint * joint)> iter_func = [&](Joint* joint) {
-        //     if (joint) {
-        //         if (!joint->child_link.mesh_file.empty()) {
-        //             cout << "Joint name: " << joint->name << endl;
-        //             cout << "Child Link name: " << joint->child_link.name << endl;
-        //             cout << "Mesh file: " << joint->child_link.mesh_file << endl;
-        //             cout << joint->origin_pose.format(CleanFmt) << std::endl;
+        // if (show) {
+        //     cout << "--------Parse Test---------" << endl;
+        //     Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+        //     function<void(Joint * joint)> iter_func = [&](Joint* joint) {
+        //         if (joint) {
+        //             if (!joint->child_link.mesh_file.empty()) {
+        //                 cout << "Joint name: " << joint->name << endl;
+        //                 cout << "Child Link name: " << joint->child_link.name << endl;
+        //                 cout << "Mesh file: " << joint->child_link.mesh_file << endl;
+        //                 cout << joint->origin_pose.format(CleanFmt) << std::endl;
+        //             }
+        //             cout << endl;
+        //             for (auto child_joint : joint->child_joints) iter_func(child_joint);
         //         }
-        //         cout << endl;
-        //         for (auto child_joint : joint->child_joints) iter_func(child_joint);
+        //     };
+        //     for (auto root_joint : root_joints_) {
+        //         iter_func(root_joint);
         //     }
-        // };
-        // for (auto root_joint : root_joints_) {
-        //     iter_func(root_joint);
         // }
 
         // 普通循环替代递归版本(iterative version instead of recursive version)
+        if (show) {
+            stack<Joint*> iter_stack;
+            for (auto root_joint : root_joints_) iter_stack.push(root_joint);
 
+            Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+
+            while (!iter_stack.empty()) {
+                const auto& joint = iter_stack.top();
+                iter_stack.pop();
+                std::cout << joint->name << std::endl;
+                if (!joint->child_link.mesh_file.empty()) {
+                    cout << "Joint name: " << joint->name << endl;
+                    cout << "Child Link name: " << joint->child_link.name << endl;
+                    cout << "Mesh file: " << joint->child_link.mesh_file << endl;
+                    cout << joint->child_link.pose_to_fixed.format(CleanFmt) << std::endl;
+                    cout << endl;
+                }
+
+                for (auto child_joint : joint->child_joints) iter_stack.push(child_joint);
+            }
+        }
     } else {
         cout << __FILE__ << endl;
         cout << __LINE__ << endl;
@@ -131,6 +155,7 @@ void TrajectoryVisualization::processJoint(
     if (urdf_joint->type != urdf::Joint::FLOATING && urdf_joint->type != urdf::Joint::PRISMATIC &&
         urdf_joint->type != urdf::Joint::FIXED) {
         const auto axis = urdf_joint->axis;
+        joint->is_fixed = false;
         if (axis.x > EPS)
             joint->jra = JointRotationAxis::X;
         else if (axis.y > EPS)
@@ -239,7 +264,7 @@ visualization_msgs::msg::Marker TrajectoryVisualization::getMarker(
 
 visualization_msgs::msg::MarkerArray TrajectoryVisualization::getMarkerArray(
     string ns, int idx, double alpha,
-    const std::unordered_map<std::string, double>& joint_state_pair) {
+    const std::unordered_map<std::string, double>& joint_state_pair, bool show) {
     visualization_msgs::msg::MarkerArray marker_array;
 
     // 递归版本(unsafe)
@@ -249,8 +274,7 @@ visualization_msgs::msg::MarkerArray TrajectoryVisualization::getMarkerArray(
     //     updateState(joint_state_pair, root_joint, tf);
     // }
 
-    // 循环版本
-
+    // 循环版本(safe)
     struct TransformData {
         Joint* joint;
         Eigen::Matrix4d tf{Eigen::Matrix4d::Identity()};
@@ -287,21 +311,45 @@ visualization_msgs::msg::MarkerArray TrajectoryVisualization::getMarkerArray(
         }
     }
     // 测试代码
-    // Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
-    // cout << "-------Update State Test--------" << std::endl;
-    // function<void(Joint * joint)> iter_func = [&](Joint* joint) {
-    //     if (joint && !joint->child_link.mesh_file.empty()) {
-    //         cout << "Joint name: " << joint->name << endl;
-    //         cout << "Child Link name: " << joint->child_link.name << endl;
-    //         cout << "Mesh file: " << joint->child_link.mesh_file << endl;
-    //         cout << joint->child_link.pose_to_fixed.format(CleanFmt) << std::endl;
-    //         cout << endl;
+    // if (show) {
+    //     Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+    //     cout << "-------Update State Test--------" << std::endl;
+    //     function<void(Joint * joint)> iter_func = [&](Joint* joint) {
+    //         if (joint && !joint->child_link.mesh_file.empty()) {
+    //             cout << "Joint name: " << joint->name << endl;
+    //             cout << "Child Link name: " << joint->child_link.name << endl;
+    //             cout << "Mesh file: " << joint->child_link.mesh_file << endl;
+    //             cout << joint->child_link.pose_to_fixed.format(CleanFmt) << std::endl;
+    //             cout << endl;
+    //         }
+    //         for (auto child_joint : joint->child_joints) iter_func(child_joint);
+    //     };
+    //     for (auto root_joint : root_joints_) {
+    //         iter_func(root_joint);
     //     }
-    //     for (auto child_joint : joint->child_joints) iter_func(child_joint);
-    // };
-    // for (auto root_joint : root_joints_) {
-    //     iter_func(root_joint);
     // }
+
+    // 循环版本
+    if (show) {
+        stack<Joint*> iter_stack;
+        for (const auto& root_joint : root_joints_) iter_stack.push(root_joint);
+
+        Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+
+        while (!iter_stack.empty()) {
+            const auto& joint = iter_stack.top();
+            iter_stack.pop();
+            if (!joint->child_link.mesh_file.empty()) {
+                cout << "Joint name: " << joint->name << endl;
+                cout << "Child Link name: " << joint->child_link.name << endl;
+                cout << "Mesh file: " << joint->child_link.mesh_file << endl;
+                cout << joint->child_link.pose_to_fixed.format(CleanFmt) << std::endl;
+                cout << endl;
+            }
+
+            for (const auto& child_joint : joint->child_joints) iter_stack.push(child_joint);
+        }
+    }
 
     vector<string> joint_list;
     joint_list.reserve(joint_state_pair.size() + 2);
@@ -322,24 +370,24 @@ visualization_msgs::msg::MarkerArray TrajectoryVisualization::getMarkerArray(
     return marker_array;
 }
 
-void TrajectoryVisualization::updateState(
-    const std::unordered_map<std::string, double>& joint_state_pair, Joint* joint,
-    Eigen::Matrix4d tf) {
-    if (!joint) return;
+// void TrajectoryVisualization::updateState(
+//     const std::unordered_map<std::string, double>& joint_state_pair, Joint* joint,
+//     Eigen::Matrix4d tf) {
+//     if (!joint) return;
 
-    auto& link = joint->child_link;
-    if (joint_state_pair.find(joint->name) != joint_state_pair.end() && !joint->is_fixed) {
-        double new_state = joint_state_pair.find(joint->name)->second;
-        joint->update_state(new_state);
-    } else
-        joint->new_pose = joint->origin_pose;
+//     auto& link = joint->child_link;
+//     if (joint_state_pair.find(joint->name) != joint_state_pair.end() && !joint->is_fixed) {
+//         double new_state = joint_state_pair.find(joint->name)->second;
+//         joint->update_state(new_state);
+//     } else
+//         joint->new_pose = joint->origin_pose;
 
-    // 更新关节子连杆的位姿
-    tf *= joint->new_pose;
-    link.pose_to_fixed = tf * link.offest;
+//     // 更新关节子连杆的位姿
+//     tf *= joint->new_pose;
+//     link.pose_to_fixed = tf * link.offest;
 
-    for (auto child_joint : joint->child_joints) updateState(joint_state_pair, child_joint, tf);
-}
+//     for (auto child_joint : joint->child_joints) updateState(joint_state_pair, child_joint, tf);
+// }
 
 void TrajectoryVisualization::get_link_pose(Link& link, shared_ptr<const urdf::Link>& urdf_link) {
     urdf::Pose origin;

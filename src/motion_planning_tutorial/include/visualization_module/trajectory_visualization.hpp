@@ -81,7 +81,9 @@ private:
 public:
     TrajectoryVisualization() = default;
 
-    TrajectoryVisualization(const string& model_description) { loadModel(model_description); }
+    TrajectoryVisualization(const string& model_description, const bool show = false) {
+        loadModel(model_description, show);
+    }
 
     ~TrajectoryVisualization() {
         for (auto& joint : joints_) {
@@ -93,21 +95,21 @@ public:
     }
 
     // 解析urdf文件
-    void loadModel(const string& model_description);
+    void loadModel(const string& model_description, bool show = false);
 
     // 获取MarkerArray，传入命名空间、索引、透明值、需要添加的关节以及其状态等参数
     visualization_msgs::msg::MarkerArray getMarkerArray(
         string ns, int idx, double alpha,
-        const std::unordered_map<std::string, double>& joint_state_pair);
+        const std::unordered_map<std::string, double>& joint_state_pair, bool show = false);
 
     // 设置几何类型(需要在加载模型信息之前设置，否则在之后设置的都不会产生效果)
     void set_geometry_type(const string geometry_type) { geometry_type_ = geometry_type; }
 
 private:
     // 更新关节状态
-    void updateState(
-        const std::unordered_map<std::string, double>& joint_state_pair, Joint* joint,
-        Eigen::Matrix4d tf);
+    // void updateState(
+    //     const std::unordered_map<std::string, double>& joint_state_pair, Joint* joint,
+    //     Eigen::Matrix4d tf);
 
     // 获取marker,所有产生的marker的frame_id默认使用"map"(rviz2默认frame)
     visualization_msgs::msg::Marker getMarker(

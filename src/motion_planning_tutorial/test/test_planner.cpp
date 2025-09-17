@@ -19,11 +19,11 @@ public:
         publisher_ =
             this->create_publisher<visualization_msgs::msg::MarkerArray>("trajectory_marker", 10);
     }
-    void parseUrdfFile(const std::string urdf_file) { tv_.loadModel(urdf_file); }
+    void parseUrdfFile(const std::string urdf_file) { tv_.loadModel(urdf_file, true); }
 
     void update(std::unordered_map<std::string, double> joint_state_map, int idx) {
         publisher_->publish(
-            tv_.getMarkerArray("trajectory_visualization_test", idx, 0.6, joint_state_map));
+            tv_.getMarkerArray("trajectory_visualization_test", idx, 0.6, joint_state_map, true));
     }
 
 private:

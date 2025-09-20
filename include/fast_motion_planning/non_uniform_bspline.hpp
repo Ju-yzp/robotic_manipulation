@@ -7,9 +7,6 @@
 // motion_planning_tutorial
 #include <fast_motion_planning/RobotParams.hpp>
 
-// cpp
-#include <unordered_map>
-
 namespace fast_motion_planning {
 class NonUniformBspline {
 public:

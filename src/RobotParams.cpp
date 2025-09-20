@@ -108,9 +108,19 @@ std::optional<JointLimit> RobotParams::get_jointlimit(const size_t id) noexcept 
 void RobotParams::update_envelope_position(const State state, size_t start, bool is_use_old_value) {
     if (kinematic_solver_) {
         State new_state = Eigen::VectorXd::Zero(dof_);
+
+        if (is_use_old_value) {
+            new_state = old_state_;
+            for (size_t i{start}; i < state.rows() + start; ++i) new_state(i) = state(i - start);
+        } else {
+            for (size_t i{start}; i < state.rows() + start; ++i) new_state(i) = state(i - start);
+        }
+
+        old_state_ = new_state;
+
         const auto tf_map = kinematic_solver_->forwardKinematic(new_state);
         for (const auto& tf : tf_map) {
-            Envelopes envelopes = envelope_group_[tf.first];
+            Envelopes& envelopes = envelope_group_[tf.first];
             envelopes.offset_to_base = tf.second * envelopes.offset;
         }
     } else {
@@ -127,12 +137,14 @@ std::optional<std::pair<Eigen::MatrixXd, Eigen::VectorXd>> RobotParams::get_enve
         return std::nullopt;
     }
 
+    std::optional<std::pair<Eigen::MatrixXd, Eigen::VectorXd>> value;
+
     std::pair<Eigen::MatrixXd, Eigen::VectorXd> pr_matrix;
     const auto& envelopes = envelope_group_.find(id);
     pr_matrix.first = envelopes->second.offset_to_base;
     pr_matrix.second = envelopes->second.radius;
 
-    return pr_matrix;
+    return value = pr_matrix;
 };
 
 std::optional<std::pair<Eigen::MatrixXd, Eigen::VectorXd>> RobotParams::get_envelope_position(

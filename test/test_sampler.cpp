@@ -16,7 +16,7 @@ int main() {
     // 采样器
     fmp::Sampler sampler(robot_params);
 
-    State state = sampler.sample(3, 3);
+    State state = sampler.sample(2, 3);
     Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
     std::cout << state.format(CleanFmt) << std::endl;
 
@@ -29,7 +29,7 @@ int main() {
         std::make_shared<fmp::Ur5eKinematicSolver>(a_table, d_table, alpha_table, theta_table);
 
     robot_params->set_kinematic_solver(ur5e_kinematic_solver);
-    robot_params->update_envelope_position(state, 3, false);
+    robot_params->update_envelope_position(state, 2, false);
 
     const size_t dim = 6;
 

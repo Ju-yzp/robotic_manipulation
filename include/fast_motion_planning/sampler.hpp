@@ -2,14 +2,15 @@
 #define FAST_MOTION_PLANNING_SAMPLER_HPP_
 
 // fast_motion_planning
-#include <cstddef>
 #include <fast_motion_planning/RobotParams.hpp>
 #include <fast_motion_planning/types.hpp>
 
 // cpp
+#include <cstddef>
 #include <random>
 
 // eigen
+#include <Eigen/src/Geometry/Quaternion.h>
 #include <Eigen/Eigen>
 
 namespace fast_motion_planning {
@@ -21,6 +22,19 @@ public:
     double uniform(const double upper, const double lower) {
         return lower + (upper - lower) * uniform01();
     }
+
+    int uniformInt(const int upper, const int lower) {
+        auto r = (int)floor(uniform((double)lower, (double)(upper) + 1.0));
+        return (r > upper) ? upper : r;
+    }
+
+    double gaussian01() { return normalDist_(generator_); }
+
+    double gaussian(double mean, double stddev);
+
+    Eigen::Quaterniond quaternion();
+
+    Eigen::Vector3d eulerRPY();
 
 private:
     std::mt19937 generator_;

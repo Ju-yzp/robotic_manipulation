@@ -23,6 +23,8 @@ find_package(tf2 REQUIRED)
 find_package(visualization_msgs REQUIRED)
 
 find_package(yaml-cpp REQUIRED)
+
+find_package(Boost REQUIRED)
 # add_library(fast_motion_plannning src/planningProblem.cpp)
 
 # target_include_directories( fast_motion_plannning PUBLIC
@@ -81,6 +83,16 @@ target_include_directories(
                       ${Eigen3_INCLUDE_DIRS})
 
 target_link_libraries(test_sampler Eigen3::Eigen robot_params)
+
+# 测试最邻近搜索器
+add_executable(test_nearestNeighbors src/ur5e_kinematic.cpp src/sampler.cpp
+                                     test/test_nearestNeighbors.cpp)
+
+target_include_directories(
+  test_nearestNeighbors PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+                               ${Eigen3_INCLUDE_DIRS})
+
+target_link_libraries(test_nearestNeighbors Eigen3::Eigen robot_params)
 
 # 测试B样条，使用pybind11结合python进行可视化处理
 find_package(Python COMPONENTS Interpreter Development)

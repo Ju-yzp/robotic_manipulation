@@ -18,6 +18,29 @@
 
 namespace fast_motion_planning {
 
+template <typename T, uint32_t Cap>
+class MemoryPool {
+public:
+    MemoryPool() {
+        for (uint32_t i{0}; i < Cap; ++i) stack_.push(i);
+
+        ptr_ = new T[Cap];
+    }
+
+    ~MemoryPool() { delete[] ptr_; }
+
+    T* allocate() {
+        if (stack_.empty()) return nullptr;
+        uint32_t offest = stack_.top();
+        stack_.pop();
+        return ptr_ + offest;
+    }
+
+private:
+    T* ptr_;
+    std::stack<uint32_t, std::vector<uint32_t>> stack_;
+};
+
 // 单线程版本
 template <size_t dim>
 class NearestNeighbors {  // TODO：下面全部使用的是欧氏距离
@@ -55,6 +78,8 @@ private:
     float alpha_bal_tmp_{0.5};
 
     KdTreeNode* root_{nullptr};
+
+    MemoryPool<KdTreeNode, 100000> mp_;
 
     struct PointTypeCmp {
         PointType point;
@@ -151,7 +176,7 @@ private:
         if (start > end) return std::nullopt;
         int32_t mid = (start + end) >> 1;
 
-        if (!(*root)) *root = new KdTreeNode();
+        if (!(*root)) *root = mp_.allocate();
         KdTreeNode* node = (*root);
 
         uint8_t div_axis{0};
@@ -189,7 +214,7 @@ private:
         if (start > mid - 1 && mid + 1 > end) return std::nullopt;
 
         if (start <= mid - 1) {
-            node->left_child = new KdTreeNode();
+            node->left_child = mp_.allocate();
             ms.node = node->left_child;
             ms.start = start;
             ms.end = mid - 1;
@@ -197,7 +222,7 @@ private:
             msv.emplace_back(ms);
         }
         if (mid + 1 <= end) {
-            node->right_child = new KdTreeNode();
+            node->right_child = mp_.allocate();
             ms.node = node->right_child;
             ms.start = mid + 1;
             ms.end = end;
@@ -295,8 +320,7 @@ private:
         uint8_t parent_axis) {
         KdTreeNode *node = *root, **div_node{nullptr};
         if (!node) {
-            node = new KdTreeNode();
-            std::cout << node << std::endl;
+            node = mp_.allocate();
             node->data = point;
             node->div_axis = (parent_axis + 1) % dim;
 
@@ -342,7 +366,7 @@ public:
             cmp_funv_[i] = [i](PointType a, PointType b) { return a(i) < b(i); };
     }
 
-    ~NearestNeighbors() { deleteTree(); }
+    ~NearestNeighbors() {}
 
     void build(PointVector& points) {
         if (root_) deleteTree();

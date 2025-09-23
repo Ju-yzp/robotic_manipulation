@@ -6,6 +6,7 @@
 
 - kd树改进版实现碰撞检测
 - 轨迹可视化模块(规划算法验证)
+- 模拟栈替代递归
 
 <p align="center">
   <img src="doc/trajectory_optimize.png" width = "400" height = "225"/>

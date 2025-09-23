@@ -18,6 +18,7 @@
 
 namespace fast_motion_planning {
 
+// 单线程版本
 template <size_t dim>
 class NearestNeighbors {  // TODO：下面全部使用的是欧氏距离
 public:
@@ -28,15 +29,15 @@ private:
     struct KdTreeNode {
         KdTreeNode() {
             for (int i{0}; i < dim; ++i) {
-                node_range(i, 0) = std::numeric_limits<double>::lowest();
-                node_range(i, 1) = std::numeric_limits<double>::infinity();
+                node_range(i, 0) = std::numeric_limits<double>::infinity();
+                node_range(i, 1) = std::numeric_limits<double>::lowest();
             }
         }
         KdTreeNode* parent{nullptr};               // 父节点
         KdTreeNode* right_child{nullptr};          // 右孩子节点
         KdTreeNode* left_child{nullptr};           // 左孩子节点
         PointType data = PointType::Zero();        // 数据
-        uint8_t partition_axis = 0;                // 分割轴
+        uint8_t div_axis = 0;                      // 分割轴
         float alpha_bal;                           // 平衡系数
         Eigen::Matrix<double, dim, 2> node_range;  // 树所代表的空间
         uint32_t tree_size{1};  // TODO:最坏的情况，树的节点数目大于uint32_t所能表示的最大正整数
@@ -150,6 +151,9 @@ private:
         if (start > end) return std::nullopt;
         int32_t mid = (start + end) >> 1;
 
+        if (!(*root)) *root = new KdTreeNode();
+        KdTreeNode* node = (*root);
+
         uint8_t div_axis{0};
         double min_value[dim], max_value[dim], dim_range[dim];
         std::fill(min_value, min_value + dim, std::numeric_limits<double>::infinity());
@@ -165,12 +169,11 @@ private:
 
         for (size_t i{0}; i < dim; ++i) dim_range[i] = max_value[i] - min_value[i];
 
-        for (size_t i{1}; i < dim; ++i)
+        for (size_t i{0}; i < dim; ++i) {
             div_axis = dim_range[i] > dim_range[div_axis] ? i : div_axis;
-
-        if (!(*root)) *root = new KdTreeNode();
-
-        KdTreeNode* node = (*root);
+            node->node_range(i, 0) = min_value[i];
+            node->node_range(i, 1) = max_value[i];
+        }
 
         node->tree_size = end - start + 1;
 
@@ -205,6 +208,12 @@ private:
         return msv;
     }
 
+    void update(KdTreeNode** node) {
+        KdTreeNode* n = *node;
+        KdTreeNode* parent = n->parent;
+        if (parent) parent->tree_size += n->tree_size;
+    }
+
     void buildTree(KdTreeNode** root, PointVector& points) {
         std::stack<MessageStorage> mss;
 
@@ -217,7 +226,6 @@ private:
         }
 
         MessageStorage ms;
-        KdTreeNode* node;
         while (!mss.empty()) {
             ms = mss.top();
             mss.pop();
@@ -282,6 +290,51 @@ private:
         return min_dist;
     }
 
+    std::optional<KdTreeNode**> add_point(
+        KdTreeNode** root, KdTreeNode* parent, PointType& point, bool allow_rebuild,
+        uint8_t parent_axis) {
+        KdTreeNode *node = *root, **div_node{nullptr};
+        if (!node) {
+            node = new KdTreeNode();
+            std::cout << node << std::endl;
+            node->data = point;
+            node->div_axis = (parent_axis + 1) % dim;
+
+            for (int i{0}; i < dim; ++i) {
+                node->node_range(i, 0) = point(i);
+                node->node_range(i, 1) = point(i);
+            }
+
+            node->parent = parent;
+            while (node) {
+                if (node->parent) {
+                    node->parent->tree_size += 1;
+                    compareWithRangeAndUpdate(node->parent, node);
+                }
+                node = node->parent;
+            }
+            return std::nullopt;
+        }
+
+        bool is_left{false};
+
+        for (uint8_t i{0}; i < dim; ++i) {
+            if (node->data(i) < point(i)) is_left = true;
+        }
+
+        div_node = is_left ? &node->left_child : &node->right_child;
+
+        // 检查是否需要重建子树
+        return div_node;
+    }
+
+    void compareWithRangeAndUpdate(KdTreeNode* parent, KdTreeNode* child) {
+        for (int i{0}; i < dim; ++i) {
+            parent->node_range(i, 0) = std::min(parent->node_range(i, 0), child->node_range(i, 0));
+            parent->node_range(i, 1) = std::max(parent->node_range(i, 1), child->node_range(i, 1));
+        }
+    }
+
 public:
     NearestNeighbors(float balance_param) : balance_criterion_param_(balance_param) {
         cmp_funv_.resize(dim);
@@ -322,6 +375,34 @@ public:
         int k_found = std::min(k_nearest, int(q.size()));
         PointVector().swap(nearest_points);
         for (int i{0}; i < k_found; ++i) {
+        }
+    }
+
+    void add_point(PointType point) {
+        std::stack<KdTreeNode**> ns;
+
+        if (!root_) return;
+
+        std::optional<KdTreeNode**> result =
+            add_point(&root_, root_->parent, point, true, root_->div_axis);
+        if (result.has_value() && result.value() != nullptr) {
+            ns.push(result.value());
+        }
+
+        KdTreeNode** n{nullptr};
+        KdTreeNode* parent = root_;
+        uint8_t parent_axis = root_->div_axis;
+
+        while (!ns.empty()) {
+            n = ns.top();
+            ns.pop();
+            result = add_point(n, parent, point, true, parent_axis);
+            if (result.has_value() && result.value() != nullptr) {
+                ns.push(result.value());
+                parent_axis = (*n)->div_axis;
+                parent = (*n);
+            } else
+                break;
         }
     }
 };

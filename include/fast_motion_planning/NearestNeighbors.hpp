@@ -112,7 +112,7 @@ private:
         void pop() {
             if (heap_size == 0) return;
             heap[0] = heap[heap_size - 1];
-            heap_size--;
+            --heap_size;
             moveDown(0);
             return;
         }
@@ -121,7 +121,7 @@ private:
             if (heap_size >= capacity) return;
             heap[heap_size] = point;
             floatUp(heap_size);
-            --heap_size;
+            ++heap_size;
             return;
         }
 
@@ -286,13 +286,25 @@ private:
         double max_dist_sqr = max_dist * max_dist;
         if (cur_dist > max_dist_sqr) return std::nullopt;
 
+        double dist = calc_dist(root->data, point);
+        if (max_dist_sqr < dist || (dist < q.top().dist && q.size() < k_nearest)) {
+            if (q.size() > k_nearest) q.pop();
+            PointTypeCmp current_point(root->data, dist);
+            q.push(current_point);
+        }
+
         float dist_left_node = calc_box_dist(root->left_child, point);
         float dist_right_node = calc_box_dist(root->right_child, point);
 
         if (q.size() < k_nearest || dist_left_node < q.top().dist ||
             dist_right_node < q.top().dist) {
-            if (dist_left_node < q.top().dist) child_nodes.emplace_back(root->left_child);
-            if (dist_right_node < q.top().dist) child_nodes.emplace_back(root->right_child);
+            if (q.size() < k_nearest) {
+                child_nodes.emplace_back(root->left_child);
+                child_nodes.emplace_back(root->right_child);
+            } else {
+                if (dist_left_node < q.top().dist) child_nodes.emplace_back(root->left_child);
+                if (dist_right_node < q.top().dist) child_nodes.emplace_back(root->right_child);
+            }
         }
         return child_nodes;
     }
@@ -304,11 +316,11 @@ private:
 
         float min_dist{0.0};
         for (size_t i{0}; i < dim; ++i) {
-            min_dist += point(i) < node->node_range(i)(0)
-                            ? std::pow(point(i) - node->node_range(i)(0), 2)
+            min_dist += point(i) < node->node_range(i, 0)
+                            ? std::pow(point(i) - node->node_range(i, 0), 2)
                             : 0.0;
-            min_dist += point(i) > node->node_range(i)(1)
-                            ? std::pow(point(i) - node->node_range(i)(1), 2)
+            min_dist += point(i) > node->node_range(i, 1)
+                            ? std::pow(point(i) - node->node_range(i, 1), 2)
                             : 0.0;
         }
 
@@ -380,9 +392,18 @@ public:
         PointType point, int k_nearest, PointVector& nearest_points, std::vector<float>& point_dist,
         double max_dist = std::numeric_limits<double>::infinity()) {
         ManualHeap q(2 * k_nearest);
+        q.clear();
+
+        std::vector<float>().swap(point_dist);
 
         std::stack<KdTreeNode*> node_stack;
-        if (root_) node_stack.push(root_);
+        if (root_) {
+            std::optional<std::vector<KdTreeNode*>> result =
+                search(root_, k_nearest, point, q, max_dist);
+            if (result.has_value()) {
+                for (auto element : result.value()) node_stack.push(element);
+            }
+        }
 
         while (!node_stack.empty()) {
             KdTreeNode* node = node_stack.top();
@@ -392,13 +413,18 @@ public:
                 search(node, k_nearest, point, q, max_dist);
 
             if (result.has_value()) {
-                for (auto element : result) node_stack.push(element);
+                for (auto element : result.value()) node_stack.push(element);
             }
         }
 
         int k_found = std::min(k_nearest, int(q.size()));
+
         PointVector().swap(nearest_points);
+        std::vector<float>().swap(point_dist);
         for (int i{0}; i < k_found; ++i) {
+            nearest_points.insert(nearest_points.begin(), q.top().point);
+            point_dist.insert(point_dist.begin(), q.top().dist);
+            q.pop();
         }
     }
 

@@ -31,7 +31,7 @@ int main() {
         for (size_t j{0}; j < 6; ++j) {
             point(j) = rng.uniform(2113.14, 1223.14);
         }
-        nn.add_point(point);
+        nn.add(point);
     }
     auto cur_time = std::chrono::high_resolution_clock::now();
     std::cout << "KD树插入点耗时:"

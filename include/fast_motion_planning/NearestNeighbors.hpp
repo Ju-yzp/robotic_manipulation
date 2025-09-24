@@ -4,6 +4,7 @@
 // cpp
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -11,11 +12,15 @@
 #include <iostream>
 #include <iterator>
 #include <limits>
+#include <mutex>
 #include <optional>
+#include <queue>
 #include <stack>
+#include <thread>
 
 // eigen
 #include <Eigen/Eigen>
+
 
 namespace fast_motion_planning {
 
@@ -67,6 +72,8 @@ private:
     static constexpr int minimal_unbalanced_tree_size = 10;
     static constexpr int multi_thread_rebuild_point_num = 1500;
 
+    int searching_counter_ = {0};
+
     struct KdTreeNode {
         KdTreeNode() {
             for (int i{0}; i < dim; ++i) {
@@ -82,7 +89,7 @@ private:
         float alpha_bal;                           // 平衡系数
         Eigen::Matrix<double, dim, 2> node_range;  // 树所代表的空间
         uint32_t tree_size{1};  // TODO:最坏的情况，树的节点数目大于uint32_t所能表示的最大正整数
-        std::atomic<bool> is_working_{false};
+        std::atomic<bool> working_flag_{false};
     };
 
     using CmpFunc = std::function<bool(PointType, PointType)>;
@@ -103,7 +110,30 @@ private:
     MemoryPool<KdTreeNode, 100000> mp_;
 
     // 存储需要重构建的树的点集
-    PointVector pcl_storage_;
+    PointVector pcl_storage_, rebuild_pcl_storage_;
+    // 重建的树
+    KdTreeNode** rebuildTree_{nullptr};
+
+    // 更新和搜索的锁，由于在rrt中，搜索最邻近点和添加新的节点是严重同步的，所以只需要一把锁就行
+    std::mutex updtae_search_flag_;
+
+    // 缓存队列
+    std::queue<PointType> point_chache_;
+
+    // 用于保护把缓存队列中的点添加至重构建树的过程
+    std::mutex operation_mutex_;
+
+    // 重构建线程停止标志
+    bool termination_flag_{false};
+
+    // 多线程重构建树的标志
+    std::atomic<bool> rebuild_flag_{false};
+
+    // 搜索的标志
+    std::atomic<int> search_counter_{0};
+
+    // 后台重构建进程
+    std::thread rebuild_thread_;
 
     struct PointTypeCmp {
         PointType point;
@@ -263,6 +293,85 @@ private:
         if (parent) parent->tree_size += n->tree_size;
     }
 
+    void multiThreadRebuild() {
+        bool terminated{false};
+        KdTreeNode *parent{nullptr}, **new_node_ptr{nullptr};
+        static int expected = 0;
+        while (terminated) {
+            if (rebuildTree_) {
+                // 如果有搜索操作在进行，那么就得等待搜索操作结束后才能进行插入，问题是，由于是RRT场景，插入和查询比较频繁，
+                // 但是我们设定不平衡的树节点个数超过某个阈值后，才能进行重建，其实搜索和添加点花费的的时间都很短
+                // 需要考虑以下的事
+                // 1.重建和搜索并发，然后搜索可能访问空指针
+                // 2.添加新点和重建并发，由于重建花的时间比较长，可能中间有多个树又需要重新构建，并且在构建的途中如果新的点是插入
+                //   重构建的树下面，就会破坏原来的结构
+                // 3.RRT中，添加点和搜索步骤是串行的，不需要考虑它们之间的多线程安全问题
+
+                // 保存父节点以及树的节点信息
+                KdTreeNode* old_root_node = (*rebuildTree_);
+                rebuild_flag_ = true;
+                parent = old_root_node->parent;
+
+                PointVector().swap(rebuild_pcl_storage_);
+                while (true) {
+                    if (search_counter_.compare_exchange_strong(
+                            expected, -1, std::memory_order_acq_rel, std::memory_order_acquire)) {
+                        flatten(old_root_node, rebuild_pcl_storage_);
+                        break;
+                    }
+                    std::this_thread::sleep_for(std::chrono::nanoseconds(10));
+                }
+
+                // 允许搜索操作进行
+                search_counter_.store(0);
+                KdTreeNode* new_root_node{nullptr};
+                if (!rebuild_pcl_storage_.empty()) {
+                    // 重新构建树
+                    buildTree(&new_root_node, rebuild_pcl_storage_);
+
+                    // 阻塞进程，其实这时候有重构建标志，不一定需要这个保护队列
+                    std::unique_lock<std::mutex> om{operation_mutex_};
+                    om.lock();
+                    while (!point_chache_.empty()) {
+                        PointType point = point_chache_.front();
+                        point_chache_.pop();
+                        add_point(point, new_root_node);
+                    }
+                    om.unlock();
+                }
+
+                // 不允许搜索操作，准备把重构建的树替换
+                while (true) {
+                    if (search_counter_.compare_exchange_strong(
+                            expected, -1, std::memory_order_acq_rel, std::memory_order_acquire))
+                        break;
+
+                    std::this_thread::sleep_for(std::chrono::nanoseconds(10));
+                }
+
+                //
+                if (parent->right_child == old_root_node)
+                    parent->right_child = new_root_node;
+                else if (parent->left_child == old_root_node)
+                    parent->left_child = new_root_node;
+                else
+                    std::cerr << "" << std::endl;
+
+                if (new_root_node) new_root_node->parent = parent;
+
+                while (true) {
+                    if (search_counter_.compare_exchange_strong(
+                            expected, 0, std::memory_order_acq_rel, std::memory_order_acquire)) {
+                        rebuild_flag_.store(false);
+                        rebuildTree_ = nullptr;
+                    }
+
+                    std::this_thread::sleep_for(std::chrono::nanoseconds(10));
+                }
+            }
+        }
+    }
+
     void buildTree(KdTreeNode** root, PointVector& points) {
         std::stack<MessageStorage> mss;
 
@@ -285,7 +394,7 @@ private:
         }
     }
 
-    void deleteTree() {  // 后面会使用固定大小内存池分配内存，减少系统调用的使用
+    void deleteTree() {
         std::stack<KdTreeNode*> node_stack;
         if (root_) node_stack.push(root_);
 
@@ -437,7 +546,7 @@ private:
         }
         return false;
     }
-    
+
     void freeMemory(KdTreeNode* root) {
         if (!root) return;
 
@@ -479,6 +588,34 @@ private:
         }
     }
 
+    void add_point(PointType point, KdTreeNode* root) {
+        std::stack<KdTreeNode**> ns;
+
+        if (!root) return;
+
+        std::optional<KdTreeNode**> result =
+            add_point(&root, root->parent, point, true, root_->div_axis);
+        if (result.has_value() && result.value() != nullptr) {
+            ns.push(result.value());
+        }
+
+        KdTreeNode** n{nullptr};
+        KdTreeNode* parent = root;
+        uint8_t parent_axis = root->div_axis;
+
+        while (!ns.empty()) {
+            n = ns.top();
+            ns.pop();
+            result = add_point(n, parent, point, true, parent_axis);
+            if (result.has_value() && result.value() != nullptr) {
+                ns.push(result.value());
+                parent_axis = (*n)->div_axis;
+                parent = (*n);
+            } else
+                break;
+        }
+    }
+
 public:
     NearestNeighbors(float balance_param) : balance_criterion_param_(balance_param) {
         cmp_funv_.resize(dim);
@@ -506,13 +643,16 @@ public:
 
         std::stack<KdTreeNode*> node_stack;
         if (root_) {
-            std::optional<std::vector<KdTreeNode*>> result =
-                search(root_, k_nearest, point, q, max_dist);
-            if (result.has_value()) {
-                for (auto element : result.value()) node_stack.push(element);
+            if (root_ == rebuildTree_) {
+                std::optional<std::vector<KdTreeNode*>> result =
+                    search(root_, k_nearest, point, q, max_dist);
+                if (result.has_value()) {
+                    for (auto element : result.value()) node_stack.push(element);
+                }
             }
         }
 
+        std::queue<KdTreeNode*> rebuild_trees_;
         while (!node_stack.empty()) {
             KdTreeNode* node = node_stack.top();
             node_stack.pop();
@@ -536,32 +676,8 @@ public:
         }
     }
 
-    void add_point(PointType point) {
-        std::stack<KdTreeNode**> ns;
-
-        if (!root_) return;
-
-        std::optional<KdTreeNode**> result =
-            add_point(&root_, root_->parent, point, true, root_->div_axis);
-        if (result.has_value() && result.value() != nullptr) {
-            ns.push(result.value());
-        }
-
-        KdTreeNode** n{nullptr};
-        KdTreeNode* parent = root_;
-        uint8_t parent_axis = root_->div_axis;
-
-        while (!ns.empty()) {
-            n = ns.top();
-            ns.pop();
-            result = add_point(n, parent, point, true, parent_axis);
-            if (result.has_value() && result.value() != nullptr) {
-                ns.push(result.value());
-                parent_axis = (*n)->div_axis;
-                parent = (*n);
-            } else
-                break;
-        }
+    void add(PointType point) {
+        add_point(point, root_);
     }
 };
 }  // namespace fast_motion_planning

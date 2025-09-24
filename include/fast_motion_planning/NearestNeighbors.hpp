@@ -3,6 +3,7 @@
 
 // cpp
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -30,15 +31,29 @@ public:
     ~MemoryPool() { delete[] ptr_; }
 
     T* allocate() {
+        while (flag.test_and_set(std::memory_order_acquire))
+            ;
         if (stack_.empty()) return nullptr;
-        uint32_t offest = stack_.top();
+        uint32_t offset = stack_.top();
         stack_.pop();
-        return ptr_ + offest;
+        flag.clear(std::memory_order_release);
+        return ptr_ + offset;
+    }
+
+    void free(void* ptr) {
+        T* new_ptr = (T*)ptr;
+        if (!new_ptr) return;
+        uint32_t offset = new_ptr - ptr_;
+        while (flag.test_and_set(std::memory_order_acquire))
+            ;
+        stack_.emplace(offset);
+        flag.clear(std::memory_order_release);
     }
 
 private:
     T* ptr_;
     std::stack<uint32_t, std::vector<uint32_t>> stack_;
+    std::atomic_flag flag = ATOMIC_FLAG_INIT;
 };
 
 // 单线程版本
@@ -49,6 +64,9 @@ public:
     using PointVector = std::vector<PointType>;
 
 private:
+    static constexpr int minimal_unbalanced_tree_size = 10;
+    static constexpr int multi_thread_rebuild_point_num = 1500;
+
     struct KdTreeNode {
         KdTreeNode() {
             for (int i{0}; i < dim; ++i) {
@@ -64,6 +82,7 @@ private:
         float alpha_bal;                           // 平衡系数
         Eigen::Matrix<double, dim, 2> node_range;  // 树所代表的空间
         uint32_t tree_size{1};  // TODO:最坏的情况，树的节点数目大于uint32_t所能表示的最大正整数
+        std::atomic<bool> is_working_{false};
     };
 
     using CmpFunc = std::function<bool(PointType, PointType)>;
@@ -77,9 +96,14 @@ private:
     // 平衡中间数
     float alpha_bal_tmp_{0.5};
 
+    float balance_criterion_param = 0.7f;
+
     KdTreeNode* root_{nullptr};
 
     MemoryPool<KdTreeNode, 100000> mp_;
+
+    // 存储需要重构建的树的点集
+    PointVector pcl_storage_;
 
     struct PointTypeCmp {
         PointType point;
@@ -96,7 +120,7 @@ private:
         }
     };
 
-    // 堆
+    // 根堆
     struct ManualHeap {
     public:
         ManualHeap(int max_capacity = 100) {
@@ -341,6 +365,7 @@ private:
                 node->node_range(i, 1) = point(i);
             }
 
+            // 回溯更新父节点，检查是否需要重建树
             node->parent = parent;
             while (node) {
                 if (node->parent) {
@@ -349,6 +374,9 @@ private:
                 }
                 node = node->parent;
             }
+
+            bool need_rebuild = allow_rebuild && criterionCheck(root);
+
             return std::nullopt;
         }
 
@@ -360,7 +388,6 @@ private:
 
         div_node = is_left ? &node->left_child : &node->right_child;
 
-        // 检查是否需要重建子树
         return div_node;
     }
 
@@ -371,6 +398,87 @@ private:
         }
     }
 
+    void flatten(KdTreeNode* root, PointVector& storage) {
+        storage.clear();
+        if (!root) return;
+        std::stack<KdTreeNode*> ns;
+        ns.emplace(root);
+        storage.reserve(root->tree_size);
+        storage.emplace_back(root->data);
+
+        KdTreeNode *parent{nullptr}, *rc{nullptr}, *lc{nullptr};
+        if (!ns.empty()) {
+            parent = ns.top();
+            rc = parent->right_child;
+            lc = parent->left_child;
+            ns.pop();
+            if (lc) {
+                storage.emplace_back(lc->data);
+                ns.emplace(lc);
+            }
+            if (rc) {
+                storage.emplace_back(rc);
+                ns.emplace(rc);
+            }
+        }
+    }
+
+    bool criterionCheck(KdTreeNode* root) {
+        if (root->TreeSize <= minimal_unbalanced_tree_size) {
+            return false;
+        }
+        float balance_evaluation = 0.0f;
+        KdTreeNode* son_ptr = root->left_child;
+        if (son_ptr == nullptr) son_ptr = root->right_son_ptr;
+        balance_evaluation = float(son_ptr->TreeSize) / (root->TreeSize - 1);
+        if (balance_evaluation > balance_criterion_param ||
+            balance_evaluation < 1 - balance_criterion_param) {
+            return true;
+        }
+        return false;
+    }
+    
+    void freeMemory(KdTreeNode* root) {
+        if (!root) return;
+
+        std::stack<KdTreeNode*> ns;
+        ns.emplace(root);
+
+        KdTreeNode *parent{nullptr}, *rc{nullptr}, *lc{nullptr};
+        if (!ns.empty()) {
+            parent = ns.top();
+            ns.pop();
+            rc = parent->right_child;
+            lc = parent->left_child;
+            if (rc) ns.emplace(rc);
+            if (lc) ns.emplace(lc);
+        }
+
+        parent = root->parent;
+        if (parent && parent->left_child == root) {
+            parent->left_child = nullptr;
+            return;
+        }
+
+        if (parent && parent->right_child == root) {
+            parent->right_child = nullptr;
+            return;
+        }
+    }
+
+    void rebuild(KdTreeNode** root) {
+        KdTreeNode* parent{nullptr};
+        if ((*root)->tree_size >= multi_thread_rebuild_point_num) {
+        } else {
+            parent = (*root)->parent;
+            int size_rec = (*root)->tree_size;
+            pcl_storage_.clear();
+            flatten(root, pcl_storage_);
+            build(root, 0, pcl_storage_.size() - 1, pcl_storage_);
+            if (*root) (*root)->parent = parent;
+        }
+    }
+
 public:
     NearestNeighbors(float balance_param) : balance_criterion_param_(balance_param) {
         cmp_funv_.resize(dim);
@@ -378,7 +486,7 @@ public:
             cmp_funv_[i] = [i](PointType a, PointType b) { return a(i) < b(i); };
     }
 
-    ~NearestNeighbors() {}
+    ~NearestNeighbors() { freeMemory(root_); }
 
     void build(PointVector& points) {
         if (root_) deleteTree();

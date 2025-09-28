@@ -88,10 +88,10 @@ private:
     static constexpr const double ESP = 1e-2;
 
     // 失去平衡性的树的节点数目如果少于规定最小值，就会在主线程内串行重构建
-    static constexpr const int min_unbalanced_tree_size_ = 10;
+    static constexpr const int min_unbalanced_tree_size_ = 5;
 
     // 如果失平衡的树的节点数目大于这个数目就在后台线程进行重构建工作
-    static constexpr const int mutil_rebuild_point_num_ = 1500;
+    static constexpr const int mutil_rebuild_point_num_ = 30;
 
     // 正在进行替换和读取操作
     int REBUILDING_FLAG;
@@ -306,9 +306,11 @@ private:
         // 申请内存
         *node = fmp_.allocate();
         (*node)->data = data;
-        (*node)->div_axis = (parent->div_axis + 1) % 3;
+        (*node)->div_axis = (parent->div_axis + 1) % Dim;
         (*node)->parent = parent;
         update(*node, allow_rebuild, 1);
+
+        // std::cout<<int(root_->tree_size)<<std::endl;
     }
 
     void mutilRebuild() {
@@ -316,6 +318,7 @@ private:
             std::unique_lock<std::mutex> rebuild_lock(rebuild_mutex);
             if (rebuild_tree_ && *rebuild_tree_) {
                 while (rebuild_flag_.test_and_set(std::memory_order_acquire)) continue;
+                std::cout << "wow" << std::endl;
                 KdTreeNode* parent = (*rebuild_tree_)->parent;  // 记录父节点
                 KdTreeNode* node{nullptr};
                 KdTreeNode** new_root_node = &node;  // 记录新的点
@@ -364,7 +367,7 @@ private:
             }
 
             // 休眠一段时间
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
         }
 
         std::cout << "Rebuild thread normally return" << std::endl;

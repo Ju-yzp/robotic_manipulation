@@ -11,7 +11,6 @@
 #include <eigen3/Eigen/Eigen>
 
 // fast_motion_planning
-#include <fast_motion_planning/collision_detector.hpp>
 #include <fast_motion_planning/kinematic_interface.hpp>
 #include <fast_motion_planning/types.hpp>
 

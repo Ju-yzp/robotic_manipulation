@@ -24,10 +24,12 @@ public:
     Eigen::Matrix4d get_end_state() { return end_state_; }
 
     // 获取初始规划路径(没有动力学约束和平滑处理)
-    std::vector<Eigen::VectorXd> get_path() const { return path_; }
+    std::vector<State> get_path() const { return path_; }
 
     // 设置初始路径
     void set_path(const std::vector<State>& path) { path_ = path; }
+
+    void set_problem_state(bool new_state) { is_solved_ = new_state; }
 
 private:
     Eigen::VectorXd start_state_;  // 机器人初始状态

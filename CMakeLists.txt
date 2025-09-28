@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22.0)
 project(
-  fast_motion_plannning
+  fast_motion_planning
   VERSION 0.1.0
   DESCRIPTION "A custom library for problem of motion planing"
   LANGUAGES CXX)
@@ -17,6 +17,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(Eigen3 REQUIRED)
 
 # ros2包
+find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(urdf REQUIRED)
 find_package(tf2 REQUIRED)
@@ -109,3 +110,13 @@ target_include_directories(
 
 target_link_libraries(test_planner Eigen3::Eigen robot_params
                       visualization_tools)
+
+install(DIRECTORY robot_resource/meshes robot_resource/urdf
+        DESTINATION share/${PROJECT_NAME})
+
+install(
+  TARGETS robot_params visualization_tools test_planner
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin)
+ament_package()

@@ -25,6 +25,8 @@ public:
         obstacles_radius_ = ors;
     }
 
+    RobotParams::SharedPtr get_robot_params() { return robot_params_; }
+
 private:
     RobotParams::SharedPtr robot_params_;
 

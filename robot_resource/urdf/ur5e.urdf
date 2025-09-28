@@ -98,17 +98,17 @@
     <visual>
       <origin rpy="0 0 3.141592653589793" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://robot_description/meshes/ur5e/visual/base.dae"/>
+        <mesh filename="package://fast_motion_planning/meshes/ur5e/visual/base.dae"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 0 3.141592653589793" xyz="0 0 0"/>
       <geometry>
          <!-- <mesh
-    meshfile="file:$(find robot_description)/meshes/meshes/ur5e/collision/base.stl"
+    meshfile="file:$(find fast_motion_planning)robot_resource//meshes/meshes/ur5e/collision/base.stl"
     meshscale="1 1 1"
  /> -->
-        <mesh filename="package://robot_description/meshes/ur5e/collision/base.stl"/>
+        <mesh filename="package://fast_motion_planning/meshes/ur5e/collision/base.stl"/>
       </geometry>
     </collision>
     <inertial>
@@ -121,17 +121,17 @@
     <visual>
       <origin rpy="0 0 3.141592653589793" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://robot_description/meshes/ur5e/visual/shoulder.dae"/>
+        <mesh filename="package://fast_motion_planning/meshes/ur5e/visual/shoulder.dae"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 0 3.141592653589793" xyz="0 0 0"/>
       <geometry>
                  <!-- <mesh
-    meshfile="file:$(find robot_description)/meshes/ur5e/collision/shoulder.stl"
+    meshfile="file:$(find fast_motion_planning)robot_resource//meshes/ur5e/collision/shoulder.stl"
     meshscale="1 1 1"
  /> -->
-        <mesh filename="package://robot_description/meshes/ur5e/collision/shoulder.stl"/>
+        <mesh filename="package://fast_motion_planning/meshes/ur5e/collision/shoulder.stl"/>
       </geometry>
     </collision>
     <inertial>
@@ -144,17 +144,17 @@
     <visual>
       <origin rpy="1.5707963267948966 0 -1.5707963267948966" xyz="0 0 0.138"/>
       <geometry>
-        <mesh filename="package://robot_description/meshes/ur5e/visual/upperarm.dae"/>
+        <mesh filename="package://fast_motion_planning/meshes/ur5e/visual/upperarm.dae"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="1.5707963267948966 0 -1.5707963267948966" xyz="0 0 0.138"/>
       <geometry>
                  <!-- <mesh
-    meshfile="file:$(find robot_description)/meshes/meshes/ur5e/collision/upperarm.stl"
+    meshfile="file:$(find fast_motion_planning)robot_resource//meshes/meshes/ur5e/collision/upperarm.stl"
     meshscale="1 1 1"
  /> -->
-        <mesh filename="package://robot_description/meshes/ur5e/collision/upperarm.stl"/>
+        <mesh filename="package://fast_motion_planning/meshes/ur5e/collision/upperarm.stl"/>
       </geometry>
     </collision>
     <inertial>
@@ -168,17 +168,17 @@
     <visual>
       <origin rpy="1.5707963267948966 0 -1.5707963267948966" xyz="0 0 0.007"/>
       <geometry>
-        <mesh filename="package://robot_description/meshes/ur5e/visual/forearm.dae"/>
+        <mesh filename="package://fast_motion_planning/meshes/ur5e/visual/forearm.dae"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="1.5707963267948966 0 -1.5707963267948966" xyz="0 0 0.007"/>
       <geometry>
                  <!-- <mesh
-    meshfile="file:$(find robot_description)/meshes/ur5e/collision/forearm.stl"
+    meshfile="file:$(find fast_motion_planning)robot_resource//meshes/ur5e/collision/forearm.stl"
     meshscale="1 1 1"
  /> -->
-        <mesh filename="package://robot_description/meshes/ur5e/collision/forearm.stl"/>
+        <mesh filename="package://fast_motion_planning/meshes/ur5e/collision/forearm.stl"/>
       </geometry>
     </collision>
     <inertial>
@@ -191,17 +191,17 @@
     <visual>
       <origin rpy="1.5707963267948966 0 0" xyz="0 0 -0.127"/>
       <geometry>
-        <mesh filename="package://robot_description/meshes/ur5e/visual/wrist1.dae"/>
+        <mesh filename="package://fast_motion_planning/meshes/ur5e/visual/wrist1.dae"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="1.5707963267948966 0 0" xyz="0 0 -0.127"/>
       <geometry>
                  <!-- <mesh
-    meshfile="file:$(find robot_description)/meshes/ur5e/collision/wrist1.stl"
+    meshfile="file:$(find fast_motion_planning)robot_resource//meshes/ur5e/collision/wrist1.stl"
     meshscale="1 1 1"
  /> -->
-        <mesh filename="package://robot_description/meshes/ur5e/collision/wrist1.stl"/>
+        <mesh filename="package://fast_motion_planning/meshes/ur5e/collision/wrist1.stl"/>
       </geometry>
     </collision>
     <inertial>
@@ -214,17 +214,17 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 -0.0997"/>
       <geometry>
-        <mesh filename="package://robot_description/meshes/ur5e/visual/wrist2.dae"/>
+        <mesh filename="package://fast_motion_planning/meshes/ur5e/visual/wrist2.dae"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz="0 0 -0.0997"/>
       <geometry>
                  <!-- <mesh
-    meshfile="file:$(find robot_description)/meshes/ur5e/collision/wrist2.stl"
+    meshfile="file:$(find fast_motion_planning)robot_resource//meshes/ur5e/collision/wrist2.stl"
     meshscale="1 1 1"
  /> -->
-        <mesh filename="package://robot_description/meshes/ur5e/collision/wrist2.stl"/>
+        <mesh filename="package://fast_motion_planning/meshes/ur5e/collision/wrist2.stl"/>
       </geometry>
     </collision>
     <inertial>
@@ -237,17 +237,17 @@
     <visual>
       <origin rpy="1.5707963267948966 0 0" xyz="0 0 -0.0989"/>
       <geometry>
-        <mesh filename="package://robot_description/meshes/ur5e/visual/wrist3.dae"/>
+        <mesh filename="package://fast_motion_planning/meshes/ur5e/visual/wrist3.dae"/>
       </geometry>
     </visual>
     <collision>
       <origin rpy="1.5707963267948966 0 0" xyz="0 0 -0.0989"/>
       <geometry>
                  <!-- <mesh
-    meshfile="file:$(find robot_description)/meshes/ur5e/collision/wrist3.stl"
+    meshfile="file:$(find fast_motion_planning)robot_resource//meshes/ur5e/collision/wrist3.stl"
     meshscale="1 1 1"
  /> -->
-        <mesh filename="package://robot_description/meshes/ur5e/collision/wrist3.stl"/>
+        <mesh filename="package://fast_motion_planning/meshes/ur5e/collision/wrist3.stl"/>
       </geometry>
     </collision>
     <inertial>

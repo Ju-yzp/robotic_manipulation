@@ -14,7 +14,7 @@ public:
 
     NonUniformBspline(
         const Eigen::MatrixXd& control_points, const int order, const double& interval,
-        const RobotParams::SharedPtr& robot_params);
+        const RobotParams::SharedPtr robot_params);
 
     ~NonUniformBspline() {}
 
@@ -31,7 +31,6 @@ public:
 
     Eigen::VectorXd evaluateDeBoorT(const double& t);
 
-    // 设置/获取B样条信息 TODO:应该添加判断维数
     void set_knot(const Eigen::VectorXd& knot) { u_ = knot; }
 
     void getTimeSpan(double& um, double& um_p);
@@ -46,7 +45,6 @@ public:
         has_acceleration_limit_ = has_acceleration_limit;
     }
 
-    // 检查可达性
     bool checkFeasiblity();
 
     bool reallocateTime();

@@ -12,7 +12,7 @@ namespace fast_motion_planning {
 
 NonUniformBspline::NonUniformBspline(
     const Eigen::MatrixXd& control_points, const int order, const double& interval,
-    const RobotParams::SharedPtr& robot_params) {
+    const RobotParams::SharedPtr robot_params) {
     control_points_ = control_points;
     p_ = order;
     interval_ = interval;

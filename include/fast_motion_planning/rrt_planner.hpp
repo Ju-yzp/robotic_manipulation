@@ -18,9 +18,9 @@ class RRTPlanner : virtual public Planner {  // 给UR5E做的规划算法，也�
 
 public:
     explicit RRTPlanner(
-        CollisionDetector::UniquePtr& collision_detector,
+        CollisionDetector::SharedPtr& collision_detector,
         KinematicInterface::SharedPtr kinematic_solver, Sampler::UniquePtr& sampler)
-        : collision_detector_(std::move(collision_detector)),
+        : collision_detector_(collision_detector),
           kinematic_solver_(kinematic_solver),
           sampler_(std::move(sampler)) {
         step_ = 0.12;
@@ -60,7 +60,7 @@ private:
     bool checkMotion(State st, State dt);
 
     // 碰撞检测器
-    CollisionDetector::UniquePtr collision_detector_;
+    CollisionDetector::SharedPtr collision_detector_;
 
     // 运动学解算器
     KinematicInterface::SharedPtr kinematic_solver_;
@@ -71,10 +71,10 @@ private:
     };
 
     // 固定内存池
-    FixedMemoryPool<StateNode, 100000> fmp_;
+    FixedMemoryPool<StateNode, 1000000> fmp_;
 
     // 邻域搜索
-    NearestNeighbor<ImformationStorage, 6, 100000> nn_;
+    NearestNeighbor<ImformationStorage, 6, 1000000> nn_;
 
     // 采样器
     Sampler::UniquePtr sampler_;

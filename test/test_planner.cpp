@@ -1,4 +1,5 @@
 // fast_motion_planning
+#include <cassert>
 #include <chrono>
 #include <fast_motion_planning/RobotParams.hpp>
 #include <fast_motion_planning/collision_detector.hpp>
@@ -35,7 +36,32 @@ public:
     }
 
     // 发布障碍物信息
-    void publish_obstacles(const Eigen::MatrixXd obsp, const Eigen::VectorXd obrs) {}
+    void publish_obstacles(const Eigen::MatrixXd obsp, const Eigen::VectorXd obrs) {
+        assert(obsp.cols() == obrs.rows());
+
+        visualization_msgs::msg::Marker obstacle_marker;
+        visualization_msgs::msg::MarkerArray obstacles_marker;
+        for (int i{0}; i < obsp.cols(); ++i) {
+            obstacle_marker.ns = "obstacle";
+            obstacle_marker.header.frame_id = "map";
+            obstacle_marker.header.stamp = this->now();
+            obstacle_marker.id = i;
+            obstacle_marker.type = visualization_msgs::msg::Marker::SPHERE;
+            obstacle_marker.action = visualization_msgs::msg::Marker::ADD;
+            obstacle_marker.pose.position.x = obsp(0, i) / 1000.0;
+            obstacle_marker.pose.position.y = obsp(1, i) / 1000.0;
+            obstacle_marker.pose.position.z = obsp(2, i) / 1000.0;
+            obstacle_marker.scale.x = obrs(i) * 2.0 / 1000.0;
+            obstacle_marker.scale.y = obrs(i) * 2.0 / 1000.0;
+            obstacle_marker.scale.z = obrs(i) * 2.0 / 1000.0;
+            obstacle_marker.color.a = 1.0;
+            obstacle_marker.color.r = 1.0;
+            obstacle_marker.color.g = 0.0;
+            obstacle_marker.color.b = 0.0;
+            obstacles_marker.markers.emplace_back(obstacle_marker);
+        }
+        pub_->publish(obstacles_marker);
+    }
 
 private:
     visualization_tools::TrajectoryVisualization tv_;
@@ -77,23 +103,31 @@ int main(int argc, const char* const* argv) {
     fmp::Sampler::UniquePtr sampler = std::make_unique<fmp::Sampler>(robot_params);
 
     // 规划器
-    fmp::RRTPlanner cp(collision_detector, uks, sampler);
+    fmp::RRTPlanner cp(collision_detector, uks, sampler, 80);
 
     // 控制器
     fmp::Controller controller(collision_detector);
 
     // 定义障碍物
-    Eigen::MatrixXd obstacles_position;
-    Eigen::Matrix<double, 4, 3> ospn;
-    ospn << -200.0, 500.0, 600.0, 1.0, 100.0, -200.0, 650.0, 1.0, 300.0, 400.0, 400.0, 1.0;
-    obstacles_position = ospn;
-    Eigen::VectorXd obstacles_radius;
-    Eigen::Vector<double, 3> osrs;
-    osrs << 100.0, 100.0, 100.0;
+    Eigen::Matrix<double, 4, 5> ospn;
+    ospn << -200.0, 100.0, 300.0, 400.0, 400.0, 500.0, -200.0, 400.0, 0.0, -300.0, 600.0, 650.0,
+        400.0, 300.0, 200.0, 1.0, 1.0, 1.0, 1.0, 1.0;
+
+    Eigen::Vector<double, 5> osrs;
+    osrs << 120.0, 120.0, 100.0, 100.0, 100.0;
     collision_detector->set_obstacles(ospn, osrs);
 
+    rclcpp::init(argc, argv);
+
+    std::string model_description = "/home/up/robotic-manipulation/robot_resource/urdf/ur5e.urdf";
+    TrajectoryPublisher tp(model_description);
+
     // 进行规划
+    auto start = std::chrono::high_resolution_clock::now();
     cp.plan(ppm);
+    auto end = std::chrono::high_resolution_clock::now();
+    std::cout << "规划耗时:" << std::chrono::duration<double, std::milli>(end - start).count()
+              << "ms\n";
     if (ppm.get_probelm_state())
         std::cout << "Succeful to solve the planning problem." << std::endl;
     else {
@@ -111,14 +145,9 @@ int main(int argc, const char* const* argv) {
         std::cout << "Optimized tarjectory is unsafe " << std::endl;
         return -1;
     }
-    rclcpp::init(argc, argv);
-
-    std::string model_description = "/home/up/robotic-manipulation/robot_resource/urdf/ur5e.urdf";
-    TrajectoryPublisher tp(model_description);
-
     int num = 10;
     double step = nub.getTimeSum() / double(num);
-    for (int i{0}; i < num; ++i) {
+    for (int i{0}; i < num + 1; ++i) {
         auto state = nub.evaluateDeBoorT(double(i) * step);
         std::unordered_map<std::string, double> jsp;
         jsp["base_link-base_link_inertia"] = 0.0;
@@ -130,6 +159,7 @@ int main(int argc, const char* const* argv) {
         jsp["wrist_3_joint"] = state[5];
         tp.publish_trajectory(jsp);
     }
+    tp.publish_obstacles(ospn, osrs);
     while (rclcpp::ok()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }

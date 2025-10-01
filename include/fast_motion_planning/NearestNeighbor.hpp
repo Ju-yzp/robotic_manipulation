@@ -14,6 +14,7 @@
 #include <queue>
 #include <stack>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 // eigen
@@ -21,125 +22,136 @@
 
 namespace fast_motion_planning {
 
-template <typename T, uint32_t Cap>
+template <typename DataType>
 class FixedMemoryPool {
 public:
-    FixedMemoryPool() {
-        capacity_ = (Cap << 1) - (Cap >> 1);  // 预申请1.5倍容量
-        memory_ptr_ = new T[capacity_];
-        for (uint32_t id{0}; id < capacity_; ++id) id_stack_.emplace(id);
+    explicit FixedMemoryPool(uint32_t max_capacity) {
+        capacity_ = (max_capacity << 1) - (max_capacity >> 1);
+        resource_ptr_ = new DataType[capacity_];
+        for (uint32_t offset{0}; offset < capacity_; ++offset) offset_stack_.emplace(offset);
     }
 
-    // 对象析构时，释放申请内存
-    ~FixedMemoryPool() { delete[] memory_ptr_; }
+    ~FixedMemoryPool() { delete[] resource_ptr_; }
 
     // 分配内存
-    T* allocate() {
-        while (flag.test_and_set(std::memory_order_acquire)) std::this_thread::yield();
-        if (id_stack_.empty()) return nullptr;
+    DataType* allocate() {
+        while (flag_.test_and_set(std::memory_order_acquire)) std::this_thread::yield();
+        if (offset_stack_.empty()) throw "No enough memory to offer (offset_stack_ is empty)";
 
-        uint32_t offset = id_stack_.top();
-        id_stack_.pop();
-        flag.clear(std::memory_order_release);
-        return memory_ptr_ + offset;
+        uint32_t offset = offset_stack_.top();
+        offset_stack_.pop();
+        flag_.clear(std::memory_order_release);
+        return resource_ptr_ + offset;
     }
 
-    void free(void* object) {
-        T* ptr = (T*)object;
-        uint32_t offset = ptr - memory_ptr_;
-        while (flag.test_and_set(std::memory_order_acquire)) std::this_thread::yield();
-        if (offset < capacity_) id_stack_.emplace(offset);
-        flag.clear(std::memory_order_release);
+    // 释放内存
+    void free(DataType* ptr) {
+        while (flag_.test_and_set(std::memory_order_acquire)) std::this_thread::yield();
+        uint32_t offset = ptr - resource_ptr_;
+        if (offset < capacity_) offset_stack_.emplace(offset);
+        flag_.clear(std::memory_order_release);
     }
 
 private:
-    // 指向申请内存块的指针
-    T* memory_ptr_;
+    // 固定内存池容量
+    uint32_t capacity_;
 
-    // 原子标志
-    std::atomic_flag flag = ATOMIC_FLAG_INIT;
+    // 指向申请内存资源的指针
+    DataType* resource_ptr_;
 
-    // 相对于内存起始地址的偏移量，也就是索引
-    std::stack<uint32_t> id_stack_;
+    // 存放偏移量的栈
+    std::stack<uint32_t> offset_stack_;
 
-    // 申请的内存容量
-    uint32_t capacity_{0};
+    // 保护内存资源的原子标志
+    std::atomic_flag flag_ = ATOMIC_FLAG_INIT;
 };
 
-template <typename Data, size_t Dim, uint32_t Cap>
+template <typename DataType, size_t Dim>
 class NearestNeighbor {
 public:
     using PointType = Eigen::Vector<double, Dim>;
-    using DataVector = std::vector<Data>;
+    using DataVector = std::vector<DataType>;
 
 private:
     struct KdTreeNode {
-        uint8_t div_axis;                  // 分割轴
-        uint32_t tree_size{1};             // 以该节点作为根节点的树的节点数量
-        Data data;                         // 数据，一定有point成员(PointType类型)
+        uint8_t div_axis{0};    // 分裂轴
+        uint32_t tree_size{1};  // 以该节点作为根节点的树的节点数量
+        DataType data;
+        double radius{0.0};                // 以该节点作为根节点的树张成的球形空间
         KdTreeNode* parent{nullptr};       // 父节点
-        KdTreeNode* right_child{nullptr};  // 右孩子节点
         KdTreeNode* left_child{nullptr};   // 左孩子节点
-        float alpha_bal;                   // 平衡系数
-        double radius{0.0};                // 从节点张成的球型空间
+        KdTreeNode* right_child{nullptr};  // 右孩子节点
     };
 
-    // 两个点在每个轴的差必须都大于这个值，否则认为是同一个点
-    static constexpr const double ESP = 1e-2;
+    using CmpFunc = std::function<bool(DataType, DataType)>;
 
-    // 失去平衡性的树的节点数目如果少于规定最小值，就会在主线程内串行重构建
-    static constexpr const int min_unbalanced_tree_size_ = 5;
+    // 不平衡树重建的最低节点数量要求
+    static constexpr const int Min_Unbalanced_Tree_Size_ = 10;
 
-    // 如果失平衡的树的节点数目大于这个数目就在后台线程进行重构建工作
-    static constexpr const int mutil_rebuild_point_num_ = 30;
+    // 不平衡树在后台线程进行重建的最少节点数量要求
+    static constexpr const int Mutil_Rebuild_Point_Num_ = 30;
 
-    // 正在进行替换和读取操作
-    int REBUILDING_FLAG;
+    // 操作队列标志
+    std::atomic_flag operation_flag_ = ATOMIC_FLAG_INIT;
 
-    // 衡量节点平衡的系数
-    double balance_criterion_param_{0.7};
+    // 主线程进行最邻近搜索标志
+    std::atomic_flag search_flag_ = ATOMIC_FLAG_INIT;
 
-    // 搜索计数器
-    std::atomic<int> search_state_counter_{0};
+    // 重建树指针
+    KdTreeNode** rebuild_tree_{nullptr};
 
-    std::atomic_flag rebuild_flag_ = ATOMIC_FLAG_INIT;
+    // 保护重建树
+    std::mutex rebuild_mutex_;
 
-    // 重建互斥锁
-    std::mutex rebuild_mutex;
+    // 固定大小内存池，减少频繁的系统调用开销
+    FixedMemoryPool<KdTreeNode> fmp_;
+
+    // 缓存队列
+    std::queue<DataType> pending_queue_;
+
+    // 后台重构建线程
+    std::thread rebuild_thread_;
 
     // 后台线程是否退出标志
     std::atomic<bool> termination_flag_{false};
 
-    // 待插入的节点队列,配合rebuid_fmutex_进行多线程保护
-    std::queue<Data> pending_queue_;
+    // 主线程重构建收集树节点信息容器
+    DataVector pcl_storage_;
 
-    using CmpFunc = std::function<bool(Data, Data)>;
-
-    // 比较函数容器
-    std::vector<CmpFunc> cfv_;
-
-    // 后台重构建线程
-    std::thread rebuild_thread;
+    // 后台重构建线程收集节点信息容器
+    DataVector rebuild_pcl_storage_;
 
     // 根节点
     KdTreeNode* root_{nullptr};
 
-    // 固定大小内存池
-    FixedMemoryPool<KdTreeNode, Cap> fmp_;
+    // 比较函数容器映射表
+    std::unordered_map<uint8_t, CmpFunc> cmp_func_map_;
 
-    // 待重建的树的根节点
-    KdTreeNode** rebuild_tree_{nullptr};
+    // 不平衡系数
+    double balance_criterion_param_{0.7};
 
-    // 用于后台线程存储重建树时的数据
-    DataVector rebuild_pcl_storage_;
+    //
+    KdTreeNode* temp_node_{nullptr};
+    KdTreeNode* temp_rebuild_{nullptr};
 
-    // 用于主线程存储重建树节点数据
-    DataVector pcl_storage_;
+    void flatten(KdTreeNode* root, DataVector& storage) {
+        storage.clear();
 
-    // 释放以root作为树的根节点的整颗树的内存，非线程安全
-    void freeTree(KdTreeNode* root) {
         if (!root) return;
+        std::stack<KdTreeNode*> ns;
+        ns.emplace(root);
+        KdTreeNode* node{nullptr};
+        while (!ns.empty()) {
+            node = ns.top();
+            ns.pop();
+            storage.emplace_back(node->data);
+            if (node->right_child) ns.emplace(node->right_child);
+            if (node->left_child) ns.emplace(node->left_child);
+        }
+    }
 
+    // 释放以root为根节点的树的内存资源
+    void freeTree(KdTreeNode* root) {
         std::stack<KdTreeNode*> ns;
         ns.emplace(root);
 
@@ -147,9 +159,61 @@ private:
         while (!ns.empty()) {
             node = ns.top();
             ns.pop();
+
+            if (node->left_child) ns.emplace(node->left_child);
+            if (node->right_child) ns.emplace(node->right_child);
+            fmp_.free(node);
+        }
+    }
+
+    void searchByTree(
+        KdTreeNode* root, PointType point, DataType& nearest_node, double nearest_dist) {
+        std::stack<KdTreeNode*> ns;
+        ns.emplace(root);
+
+        while (!ns.empty()) {
+            KdTreeNode* node = ns.top();
+            ns.pop();
+            double current_dist = calc_dist(node->data.point, point);
+
+            if (current_dist < nearest_dist) {
+                nearest_node = node->data;
+                nearest_dist = current_dist;
+            }
+
+            if (current_dist - node->radius > nearest_dist) continue;
+
             if (node->right_child) ns.emplace(node->right_child);
             if (node->left_child) ns.emplace(node->left_child);
-            fmp_.free(node);
+        }
+    }
+
+    void update(KdTreeNode* node, bool allow_rebuild, int increase_size) {
+        KdTreeNode** need_rebuild_tree{nullptr};
+        PointType point = node->data.point;
+
+        temp_node_ = nullptr;
+        node = node->parent;
+        while (node) {
+            node->tree_size += increase_size;
+            double dist = calc_dist(node->data.point, point);
+            if (dist > node->radius) node->radius = dist;
+            if (allow_rebuild && criterionCheck(node) &&
+                node->tree_size > Min_Unbalanced_Tree_Size_) {
+                temp_node_ = node;
+            }
+            node = node->parent;
+            std::cout << "wo" << std::endl;
+        }
+
+        need_rebuild_tree = &temp_node_;
+        if (*need_rebuild_tree) {
+            if (*need_rebuild_tree == root_) {
+                std::cout << "wow" << std::endl;
+                rebuild(&root_);
+            } else
+                rebuild(need_rebuild_tree);
+            need_rebuild_tree = nullptr;
         }
     }
 
@@ -159,13 +223,17 @@ private:
         int32_t start{0}, end{0};
     };
 
-    // 用于构建新树
+    // 构建子树
     std::optional<std::vector<MessageStorage>> buildTree(
-        KdTreeNode** root, int32_t start, int32_t end, DataVector& data_set) {
+        KdTreeNode** root, int32_t start, int32_t end, DataVector& points) {
         if (start > end) return std::nullopt;
         int32_t mid = (start + end) >> 1;
 
-        if (!(*root)) *root = fmp_.allocate();
+        if (!(*root)) {
+            *root = fmp_.allocate();
+            std::cout << "w" << std::endl;
+        }
+
         double min_value[Dim], max_value[Dim], dim_range[Dim];
         std::fill(min_value, min_value + Dim, std::numeric_limits<double>::infinity());
         std::fill(max_value, max_value + Dim, std::numeric_limits<double>::lowest());
@@ -174,8 +242,8 @@ private:
         // 获取各个维度上的极值
         for (int32_t i{start}; i < end + 1; ++i) {
             for (size_t j{0}; j < Dim; ++j) {
-                min_value[j] = std::min(data_set[i].point(j), min_value[j]);
-                max_value[j] = std::max(data_set[i].point(j), max_value[j]);
+                min_value[j] = std::min(points[i].point(j), min_value[j]);
+                max_value[j] = std::max(points[i].point(j), max_value[j]);
             }
         }
 
@@ -188,15 +256,16 @@ private:
             div_axis = dim_range[i] > dim_range[div_axis] ? i : div_axis;
 
         node->tree_size = end - start + 1;
+        node->div_axis = div_axis;
 
         std::nth_element(
-            std::begin(data_set) + start, std::begin(data_set) + mid,
-            std::begin(data_set) + end + 1, cfv_[div_axis]);
+            std::begin(points) + start, std::begin(points) + mid, std::begin(points) + end + 1,
+            cmp_func_map_[div_axis]);
 
-        node->data = data_set[mid];
+        node->data = points[mid];
         double max_dist_sqr = 0.0;
         for (int32_t i = start; i <= end; ++i) {
-            double dist_sqr = calc_dist(data_set[i].point, node->data.point);
+            double dist_sqr = calc_dist(points[i].point, node->data.point);
             if (dist_sqr > max_dist_sqr) {
                 max_dist_sqr = dist_sqr;
             }
@@ -228,12 +297,11 @@ private:
         return msv;
     }
 
-    // 传入数据集，然后构建一颗以root为根节点的树,root指向的对象内容需要是一个空指针
-    void buildTree(KdTreeNode** root, DataVector& data_set) {
+    void buildTree(KdTreeNode** root, DataVector& points) {
         std::stack<MessageStorage> mss;
 
         std::optional<std::vector<MessageStorage>> msv;
-        msv = buildTree(root, 0, uint32_t(data_set.size() - 1), data_set);
+        msv = buildTree(root, 0, uint32_t(points.size() - 1), points);
 
         if (msv.has_value()) {
             for (auto ms : msv.value()) {
@@ -245,47 +313,130 @@ private:
         while (!mss.empty()) {
             ms = mss.top();
             mss.pop();
-            msv = buildTree(&ms.node, ms.start, ms.end, data_set);
+            msv = buildTree(&ms.node, ms.start, ms.end, points);
             if (msv.has_value()) {
                 for (auto ms : msv.value()) mss.push(ms);
             }
         }
     }
 
-    // 从该叶子节点出发，回溯至整颗kd-tree的根节点,更新全部被影响的节点
-    void update(KdTreeNode* node, bool allow_rebuild, int diff) {
-        if (!node) return;
+    void mutilThread() {
+        while (!termination_flag_.load(std::memory_order_acquire)) {
+            std::unique_lock<std::mutex> rebuild_lock(rebuild_mutex_);
+            if (rebuild_tree_) {
+                // std::cout << "Start rebuild tree in multi-thread " << std::endl;
+                // while (operation_flag_.test_and_set(std::memory_order_acquire))
+                //     std::this_thread::yield();
 
-        KdTreeNode* parent = node->parent;
-        KdTreeNode** rt{nullptr};
-        while (parent) {
-            parent->tree_size += diff;
-            if (calc_dist(parent->data.point, node->data.point) > parent->radius)
-                parent->radius = calc_dist(parent->data.point, node->data.point);
-            if (allow_rebuild && criterionCheck(parent) &&
-                parent->tree_size > min_unbalanced_tree_size_)
-                rt = &parent;
-            parent = parent->parent;
+                // // 保存旧树信息以及重建新树
+                // KdTreeNode* parent_node = (*rebuild_tree_)->parent;
+                // KdTreeNode* old_root_node = (*rebuild_tree_);
+                // rebuild_pcl_storage_.clear();
+                // KdTreeNode* new_root_node{nullptr};
+                // flatten((*rebuild_tree_), rebuild_pcl_storage_);
+                // buildTree(&new_root_node, rebuild_pcl_storage_);
+
+                // // 将缓存队列中的点，插入新树中
+                // int num{0};
+                // while (true) {
+                //     if (pending_queue_.empty()) break;
+                //     DataType point = pending_queue_.front();
+                //     pending_queue_.pop();
+                //     add_by_point(point, new_root_node, false);
+                //     operation_flag_.clear(std::memory_order_release);
+                //     if (num % 40 == 0)
+                //     std::this_thread::sleep_for(std::chrono::microseconds(200)); while
+                //     (operation_flag_.test_and_set(std::memory_order_acquire))
+                //         std::this_thread::yield();
+                // }
+                // operation_flag_.clear(std::memory_order_release);
+
+                // // 新树替换旧树
+                // while (search_flag_.test_and_set(std::memory_order_acquire))
+                //     std::this_thread::yield();
+                // if (parent_node) {
+                //     new_root_node->parent = parent_node;
+                //     if (&parent_node->right_child == rebuild_tree_)
+                //         parent_node->right_child = new_root_node;
+                //     if (&parent_node->left_child == rebuild_tree_)
+                //         parent_node->left_child = new_root_node;
+                //     new_root_node->parent = parent_node;
+                // }
+                // search_flag_.clear(std::memory_order_release);
+                // rebuild_tree_ = nullptr;
+                // rebuild_lock.unlock();
+                // freeTree(old_root_node);
+                // std::cout << "Finish rebuilding tree " << std::endl;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(3));
         }
-
-        if (rt && *rt) rebuild(rt);
     }
 
-    // 添加点至kd-tree中
-    void add_point(Data data, KdTreeNode* root, bool allow_rebuild = true) {
-        if (!root) return;
+    void start_thread() { rebuild_thread_ = std::thread(&NearestNeighbor::mutilThread, this); }
 
+    // 返回两点之间的欧氏距离
+    double calc_dist(PointType p1, PointType p2) { return (p1 - p2).norm(); }
+
+    void rebuild(KdTreeNode** need_rebuild_tree) {
+        if ((*need_rebuild_tree)->tree_size >= Mutil_Rebuild_Point_Num_) {
+            std::cout << "!" << std::endl;
+            std::unique_lock<std::mutex> rebuild_lock(rebuild_mutex_, std::try_to_lock);
+            if (rebuild_lock.owns_lock()) {
+                if (!rebuild_tree_ ||
+                    ((*rebuild_tree_)->tree_size < (*need_rebuild_tree)->tree_size)) {
+                    temp_rebuild_ = temp_node_;
+                    rebuild_tree_ = &temp_rebuild_;
+                }
+            }
+        } else {
+            std::cout << "Start rebuild in main thread" << std::endl;
+            KdTreeNode* parent_node = (*need_rebuild_tree)->parent;
+            KdTreeNode* old_root_node = (*need_rebuild_tree);
+            KdTreeNode* new_root_node{nullptr};
+            flatten(old_root_node, pcl_storage_);
+            buildTree(&new_root_node, pcl_storage_);
+            std::cout << new_root_node->tree_size << std::endl;
+            if (parent_node) {
+                std::cout << "go " << std::endl;
+                if (parent_node->left_child == old_root_node)
+                    parent_node->left_child = new_root_node;
+                else
+                    parent_node->right_child = new_root_node;
+            } else
+                root_ = new_root_node;
+
+            freeTree(old_root_node);
+        }
+    }
+
+    // 检查节点的平衡性
+    bool criterionCheck(KdTreeNode* node) {
+        if (node->tree_size <= Min_Unbalanced_Tree_Size_) return false;
+
+        double balance_evaluation{0.0};
+        KdTreeNode* child_ptr = node->left_child ? node->left_child : node->right_child;
+        if (!child_ptr) return false;
+
+        balance_evaluation = double(child_ptr->tree_size) / double(node->tree_size);
+        if (balance_evaluation > balance_criterion_param_ ||
+            (1.0 - balance_evaluation) < balance_criterion_param_)
+            return true;
+        return false;
+    }
+
+    void add_by_point(DataType point, KdTreeNode* root, bool allow_rebuild = true) {
         KdTreeNode* parent = root;
         KdTreeNode** node{nullptr};
         while (parent) {
             if (rebuild_tree_ && *rebuild_tree_ == parent) {
-                while (rebuild_flag_.test_and_set(std::memory_order_acquire))
+                while (operation_flag_.test_and_set(std::memory_order_acquire))
                     std::this_thread::yield();
-                pending_queue_.push(data);
-                rebuild_flag_.clear(std::memory_order_release);
+                pending_queue_.push(point);
+                operation_flag_.clear(std::memory_order_release);
                 return;
             } else {
-                if (cfv_[parent->div_axis](parent->data, data)) {
+                std::cout << "!!" << std::endl;
+                if (cmp_func_map_[parent->div_axis](parent->data, point)) {
                     if (parent->right_child) {
                         parent = parent->right_child;
                         continue;
@@ -303,247 +454,89 @@ private:
             }
         }
 
+        std::cout << "size " << int(root_->tree_size) << std::endl;
         // 申请内存
-        *node = fmp_.allocate();
-        (*node)->data = data;
+        (*node) = fmp_.allocate();
+        (*node)->data = point;
         (*node)->div_axis = (parent->div_axis + 1) % Dim;
         (*node)->parent = parent;
         update(*node, allow_rebuild, 1);
-
-        // std::cout<<int(root_->tree_size)<<std::endl;
     }
 
-    void mutilRebuild() {
-        while (!termination_flag_.load(std::memory_order_acquire)) {
-            std::unique_lock<std::mutex> rebuild_lock(rebuild_mutex);
-            if (rebuild_tree_ && *rebuild_tree_) {
-                while (rebuild_flag_.test_and_set(std::memory_order_acquire)) continue;
-                std::cout << "wow" << std::endl;
-                KdTreeNode* parent = (*rebuild_tree_)->parent;  // 记录父节点
-                KdTreeNode* node{nullptr};
-                KdTreeNode** new_root_node = &node;  // 记录新的点
-                KdTreeNode* old_root_node = *rebuild_tree_;
-                uint32_t old_tree_size = (*rebuild_tree_)->tree_size;
-                flatten(old_root_node, rebuild_pcl_storage_);
-                buildTree(new_root_node, rebuild_pcl_storage_);
-                int num{0};
-                while (!pending_queue_.empty()) {
-                    Data data = pending_queue_.front();
-                    pending_queue_.pop();
-                    ++num;
-                    add_point(data, *new_root_node, false);
-                    rebuild_flag_.clear(std::memory_order_release);
-                    if (num % 40 == 0) std::this_thread::sleep_for(std::chrono::microseconds(70));
-                    while (rebuild_flag_.test_and_set(std::memory_order_acquire))
-                        ;
-                }
-                rebuild_flag_.clear(std::memory_order_release);
-
-                // 首先自旋等待没有搜索最邻近点，等待没有的时候,用新树替换掉旧树，并释放旧树申请的内存
-                int expected_counter = 0;
-                while (true) {
-                    if (search_state_counter_.compare_exchange_strong(
-                            expected_counter, -1, std::memory_order_acquire))
-                        break;
-
-                    // 避免太多空转，造成cpu利用率下降
-                    expected_counter = 0;
-                    std::this_thread::yield();
-                }
-
-                // 判断属于父节点的右子节点还是左子节点，然后使得指向正确的内存，并赋值子节点指向正确的父节点
-                if (parent) {
-                    if (parent->right_child == old_root_node) parent->right_child = *new_root_node;
-                    if (parent->left_child == old_root_node) parent->left_child = *new_root_node;
-                    (*new_root_node)->parent = parent;
-                }
-                search_state_counter_.store(0, std::memory_order_release);
-                update(*new_root_node, true, (*new_root_node)->tree_size - old_tree_size);
-                rebuild_tree_ = nullptr;
-
-                rebuild_lock.unlock();
-                freeTree(old_root_node);
-                std::cout << "Finish rebuild tree" << std::endl;
-            }
-
-            // 休眠一段时间
-            std::this_thread::sleep_for(std::chrono::milliseconds(20));
-        }
-
-        std::cout << "Rebuild thread normally return" << std::endl;
+public:
+    NearestNeighbor(uint32_t max_capacity, double balance_criterion_param = 0.7)
+        : fmp_(max_capacity), balance_criterion_param_(balance_criterion_param) {
+        for (uint8_t id{0}; id < Dim; ++id)
+            cmp_func_map_[id] = [id](DataType a, DataType b) { return a.point(id) < b.point(id); };
+        // start_thread();
     }
 
-    void flatten(KdTreeNode* root, DataVector& storage) {
-        storage.clear();  // 清空容器，防止旧数据干扰
+    ~NearestNeighbor() {
+        std::cout << int(root_->tree_size) << std::endl;
+        termination_flag_.store(true, std::memory_order_release);
+        if (rebuild_thread_.joinable()) rebuild_thread_.join();
+        if (root_) freeTree(root_);
+    }
 
-        if (!root) return;
-        storage.emplace_back(root->data);
+    // 搜索最邻近点
+    void search(PointType point, DataType& nearest_node) {
         std::stack<KdTreeNode*> ns;
-        ns.emplace(root);
-        KdTreeNode* node{nullptr};
-        while (!ns.empty()) {
-            node = ns.top();
-            ns.pop();
-            if (node->right_child) ns.emplace(node->right_child);
-            if (node->left_child) ns.emplace(node->left_child);
-        }
-    }
-
-    // 寻找最近的点
-    void search(PointType point, Data& nearest_node) {
-        std::stack<KdTreeNode*> ns;
+        if (!root_) return;
+        std::cout << "root size " << int(root_->tree_size) << std::endl;
         nearest_node = root_->data;
         double nearest_dist = calc_dist(nearest_node.point, point);
         if (root_->right_child) ns.emplace(root_->right_child);
         if (root_->left_child) ns.emplace(root_->left_child);
 
         KdTreeNode* rebuilding_tree{nullptr};
+        KdTreeNode* node{nullptr};
         while (!ns.empty()) {
-            KdTreeNode* node = ns.top();
+            node = ns.top();
             ns.pop();
-            if (rebuild_tree_ && *rebuild_tree_ == node) {
-                rebuilding_tree = *rebuild_tree_;
+
+            // 如果需要遍历正在重建的树,那么就优先遍历其他树先
+            if (rebuild_tree_ && (*rebuild_tree_) == node) {
+                rebuilding_tree = node;
                 continue;
             }
-            double current_dist = calc_dist(node->data.point, point);
 
-            if (current_dist < nearest_dist) {
+            double cur_dist = calc_dist(node->data.point, nearest_node.point);
+            if (cur_dist < nearest_dist) {
                 nearest_node = node->data;
-                nearest_dist = current_dist;
+                nearest_dist = cur_dist;
             }
 
-            if (current_dist - node->radius > nearest_dist) continue;
+            if (cur_dist - node->radius > nearest_dist) continue;
 
             if (node->right_child) ns.emplace(node->right_child);
             if (node->left_child) ns.emplace(node->left_child);
         }
 
-        // 在serach_state_counter为-1时，不能进行搜索，但是serach_state_counter非0时，就会进行自增操作
-        while (true && rebuilding_tree) {
-            if (search_state_counter_.compare_exchange_strong(
-                    REBUILDING_FLAG, 0, std::memory_order_acq_rel, std::memory_order_acquire))
-                continue;
-            else {
-                std::cout << "wow" << std::endl;
-                search_state_counter_.fetch_add(1, std::memory_order_release);
-                search_by_tree(rebuilding_tree, point, nearest_node, nearest_dist);
-                search_state_counter_.fetch_sub(1, std::memory_order_release);
-                break;
-            }
-            std::this_thread::yield();
+        if (rebuilding_tree) {
+            while (search_flag_.test_and_set(std::memory_order_acquire)) std::this_thread::yield();
+            searchByTree(rebuilding_tree, point, nearest_node, nearest_dist);
+            search_flag_.clear(std::memory_order_release);
         }
     }
 
-    // 搜索以root为根节点的树
-    void search_by_tree(
-        KdTreeNode* root, PointType point, Data& nearest_node, double nearest_dist) {
-        std::stack<KdTreeNode*> ns;
-        ns.emplace(root);
+    void build(DataVector& points) { buildTree(&root_, points); }
 
-        while (!ns.empty()) {
-            KdTreeNode* node = ns.top();
-            ns.pop();
-            double current_dist = calc_dist(node->data.point, point);
+    void add_point(DataType point) { add_by_point(point, root_, true); }
 
-            if (current_dist < nearest_dist) {
-                nearest_node = node->data;
-                nearest_dist = current_dist;
-            }
-
-            if (current_dist - node->radius > nearest_dist) continue;
-
-            if (node->right_child) ns.emplace(node->right_child);
-            if (node->left_child) ns.emplace(node->left_child);
-        }
-    }
-
-    // 计算两个点的平方距离
-    double calc_dist(PointType a, PointType b) { return (a - b).norm(); }
-
-    // 判断两个点是否相同
-    bool isSamePoint(PointType a, PointType b) {
-        for (size_t i{0}; i < Dim; ++i) {
-            if (std::abs(a(i) - b(i)) > ESP) return false;
-        }
-        return true;
-    }
-
-    // 检查节点的平衡性
-    bool criterionCheck(KdTreeNode* root) {
-        if (root->tree_size <= min_unbalanced_tree_size_) return false;
-
-        double balance_evaluation = 0.0f;
-        KdTreeNode* child_ptr{nullptr};
-        if (root->left_child)
-            child_ptr = root->left_child;
-        else if (root->right_child)
-            child_ptr = root->right_child;
-        else
-            return false;
-
-        balance_evaluation = double(child_ptr->tree_size) / double(root->tree_size);
-
-        if (balance_evaluation > balance_criterion_param_ ||
-            (1.0 - balance_evaluation) < balance_criterion_param_)
-            return true;
-        return false;
-    }
-
-    // 启动后台重构建线程
-    void startThread() { rebuild_thread = std::thread(&NearestNeighbor::mutilRebuild, this); }
-
-    void rebuild(KdTreeNode** root) {
-        KdTreeNode* parent;
-        if ((*root)->tree_size >= mutil_rebuild_point_num_) {
-            // 拿不到锁就选择等待下一次节点更新时触发重建
-            std::unique_lock<std::mutex> rebuild_lock(rebuild_mutex, std::try_to_lock);
-            if (rebuild_lock.owns_lock()) {
-                if (rebuild_tree_ && *rebuild_tree_ &&
-                    (*rebuild_tree_)->tree_size < (*root)->tree_size)
-                    rebuild_tree_ = root;
-                if (!rebuild_tree_) rebuild_tree_ = root;
-            }
-        } else {
-            KdTreeNode* old_root_node = *root;     // 记录旧树的根节点指向的内存位置
-            pcl_storage_.clear();                  // 清理容器
-            flatten(old_root_node, pcl_storage_);  // 收集旧树所有节点信息
-            buildTree(root, pcl_storage_);         // 构建旧树
-            freeTree(old_root_node);               // 释放旧树内存
-        }
-    }
-
-public:
-    NearestNeighbor() {
-        // 初始化比较函数
-        cfv_.resize(Dim);
-        for (size_t id{0}; id < Dim; ++id)
-            cfv_[id] = [id](Data a, Data b) { return a.point(id) < b.point(id); };
-
-        REBUILDING_FLAG = -1;
-
-        startThread();
-    }
-
-    // 调用析构函数时，释放申请的内存
-    ~NearestNeighbor() {
-        termination_flag_.store(true, std::memory_order_release);
-        if (rebuild_thread.joinable()) rebuild_thread.join();
-        freeTree(root_);
-    }
-
-    // 插入数据
-    void insert(Data data) { add_point(data, root_); }
-
-    // 构建
-    void build(DataVector& data_set) { buildTree(&root_, data_set); }
-
-    void reset() {
-        freeTree(root_);
-        root_ = nullptr;
-    }
-
-    // 搜索最邻近的节点
-    void searchNearest(PointType point, Data& nearest_node) { search(point, nearest_node); }
+    // void iter(){
+    //     std::stack<KdTreeNode *>ns;
+    //     if (!root_) return ;
+    //     ns.emplace(root_);
+    //     KdTreeNode* node{nullptr};
+    //     int count{0};
+    //     while (!ns.empty()) {
+    //         node = ns.top();
+    //         ns.pop();
+    //         //std::cout<<++count<<std::endl;
+    //         if (node->right_child) ns.emplace(node->right_child);
+    //         if (node->left_child) ns.emplace(node->left_child);
+    //     }
+    // }
 };
 }  // namespace fast_motion_planning
 

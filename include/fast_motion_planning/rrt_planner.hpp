@@ -2,6 +2,7 @@
 #define FAST_MOTION_PLANNING_RRT_PLANNER_HPP_
 
 // fast_motion_planning
+#include <cstdint>
 #include <fast_motion_planning/NearestNeighbor.hpp>
 #include <fast_motion_planning/collision_detector.hpp>
 #include <fast_motion_planning/kinematic_interface.hpp>
@@ -11,6 +12,7 @@
 
 // cpp
 #include <optional>
+#include <vector>
 
 namespace fast_motion_planning {
 
@@ -19,16 +21,19 @@ class RRTPlanner : virtual public Planner {  // 给UR5E做的规划算法，也�
 public:
     explicit RRTPlanner(
         CollisionDetector::SharedPtr& collision_detector,
-        KinematicInterface::SharedPtr kinematic_solver, Sampler::UniquePtr& sampler)
+        KinematicInterface::SharedPtr kinematic_solver, Sampler::UniquePtr& sampler,
+        uint32_t max_iter)
         : collision_detector_(collision_detector),
           kinematic_solver_(kinematic_solver),
-          sampler_(std::move(sampler)) {
-        step_ = 0.12;
-        stop_threshold_ = 0.2;
-        max_iter_ = 100000;
+          sampler_(std::move(sampler)),
+          max_iter_(max_iter),
+          fmp_(max_iter),
+          nn_(max_iter) {
+        step_ = 0.2;
+        stop_threshold_ = 0.27;
     }
 
-    RRTPlanner() {}
+    ~RRTPlanner() {}
 
     void set_step(const double step) { step_ = step; }
 
@@ -71,10 +76,10 @@ private:
     };
 
     // 固定内存池
-    FixedMemoryPool<StateNode, 1000000> fmp_;
+    FixedMemoryPool<StateNode> fmp_;
 
     // 邻域搜索
-    NearestNeighbor<ImformationStorage, 6, 1000000> nn_;
+    NearestNeighbor<ImformationStorage, 6> nn_;
 
     // 采样器
     Sampler::UniquePtr sampler_;
@@ -96,6 +101,8 @@ private:
 
     // 目标导向
     double goalBasic_{.08};
+
+    double startBaisc_{.18};
 };
 }  // namespace fast_motion_planning
 #endif

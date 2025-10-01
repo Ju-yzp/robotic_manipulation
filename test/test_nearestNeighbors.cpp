@@ -12,7 +12,7 @@ int main() {
     struct Data {
         Eigen::Vector<double, 2> point;
     };
-    fmp::NearestNeighbor<Data, 2, 100000> nn;
+    fmp::NearestNeighbor<Data, 2> nn(100);
     fmp::RandomNumberGenerator rng;
 
     auto start = std::chrono::high_resolution_clock::now();
@@ -34,33 +34,14 @@ int main() {
 
     // nn.insert(data);
     start = std::chrono::high_resolution_clock::now();
-    for (size_t i{0}; i < 10000; ++i) {
+    for (size_t i{0}; i < 30; ++i) {
         for (size_t j{0}; j < 2; ++j) {
             data.point(j) = rng.uniform(110, 20000);
         }
-        nn.insert(data);
-        // data_set.emplace_back(data);
-        //  start = std::chrono::high_resolution_clock::now();
-        auto point = data.point;
-        // std::sort(data_set.begin(), data_set.end(), [point](auto a, auto b) {
-        //     return (a.point - point).norm() < (b.point - point).norm();
-        // });
-        // end = std::chrono::high_resolution_clock::now();
-        // std::cout << "暴力排序查询最邻近点:"
-        //           << std::chrono::duration<double, std::milli>(end - start).count() << "ms\n";
-
-        // start = std::chrono::high_resolution_clock::now();
-        nn.searchNearest(point, data);
-        // end = std::chrono::high_resolution_clock::now();
-        // std::cout << "KD树查询最邻近点:"
-        //           << std::chrono::duration<double, std::milli>(end - start).count() << "ms\n";
-
-        // Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
-        // std::cout << "暴力排序最邻近点" << std::endl;
-        // std::cout << data_set[0].point.format(CleanFmt) << std::endl;
-        // std::cout << "Kd-tree搜索最邻近点" << std::endl;
-        // std::cout << data.point.format(CleanFmt) << std::endl;
-        // std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        nn.add_point(data);
+        // nn.iter();
+        //  auto point = data.point;
+        //  nn.search(point, data);
     }
     end = std::chrono::high_resolution_clock::now();
     std::cout << "KD树查询最邻近点:"

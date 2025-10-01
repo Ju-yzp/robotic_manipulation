@@ -27,7 +27,6 @@ void RRTPlanner::plan(PlanningProblem& ppm) {
         std::cout << "Failed to find a safe path for the robot to reach the specified pose: no "
                      "valid solutions exist"
                   << std::endl;
-
         return;
     }
 
@@ -49,13 +48,14 @@ void RRTPlanner::plan(PlanningProblem& ppm) {
     while (count < max_iter_ && !ppm.get_probelm_state()) {
         if (rng_.uniform01() < goalBasic_)
             ramdom_state = goalSample(valid_solutions[0]);
+        else if (rng_.uniform01() < startBaisc_)
+            ramdom_state = goalSample(st);
         else
             ramdom_state = sampler_->sample();
 
         // 寻找最邻近点,并且向随机采样点的方向扩展
-        nn_.searchNearest(ramdom_state, nearest_node);
+        nn_.search(ramdom_state, nearest_node);
         state = expand(nearest_node.point, ramdom_state);
-
         count++;
 
         StateNode* node{nullptr};
@@ -65,7 +65,7 @@ void RRTPlanner::plan(PlanningProblem& ppm) {
             node->state = state;
             is.ptr = node;
             is.point = state;
-            nn_.insert(is);
+            nn_.add_point(is);
         } else
             continue;
 
@@ -127,7 +127,7 @@ State RRTPlanner::expand(const State& st, const State& dt) {
 State RRTPlanner::goalSample(State goal_state) {
     Eigen::Vector<double, 6> positions;
     for (size_t id{0}; id < 6; id++) {
-        positions[id] = rng_.uniform(goal_state[id] - step_, goal_state[id] + step_);
+        positions[id] = rng_.uniform(goal_state[id] + 0.8, goal_state[id] - 0.8);
     }
     State state{positions};
     return state;

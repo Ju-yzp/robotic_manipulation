@@ -115,7 +115,7 @@ install(DIRECTORY robot_resource/meshes robot_resource/urdf
         DESTINATION share/${PROJECT_NAME})
 
 install(
-  TARGETS robot_params visualization_tools test_planner
+  TARGETS robot_params visualization_tools test_planner test_nearestNeighbors
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)

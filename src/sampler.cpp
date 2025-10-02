@@ -16,10 +16,6 @@ Sampler::Sampler(const RobotParams::SharedPtr& robot_params) {
         constraints_(i, 0) = jointlimit->position_upper;
         constraints_(i, 1) = jointlimit->position_lower;
     }
-
-    space_manager_.initilize(
-        constraints_(0, 1), constraints_(0, 0), constraints_(1, 1), constraints_(1, 0),
-        constraints_(2, 1), constraints_(2, 0), 0.4);
 }
 
 Eigen::Quaterniond RandomNumberGenerator::quaternion() {
@@ -59,5 +55,4 @@ State Sampler::sample() {
     return state;
 }
 
-bool Sampler::insert(Eigen::Vector3d state) { return space_manager_.insert(state); }
 }  // namespace fast_motion_planning

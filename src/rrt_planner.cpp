@@ -57,7 +57,6 @@ void RRTPlanner::plan(PlanningProblem& ppm) {
         nn_.search(ramdom_state, nearest_node);
         state = expand(nearest_node.point, ramdom_state);
         count++;
-
         StateNode* node{nullptr};
         if (checkMotion(nearest_node.point, state)) {
             node = fmp_.allocate();

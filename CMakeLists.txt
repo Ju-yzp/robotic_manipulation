@@ -7,7 +7,7 @@ project(
 
 # 如果用户没有设置构建类型，那么默认设置为Debug
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug)
+  set(CMAKE_BUILD_TYPE Release)
 endif()
 
 set(CMAKE_CXX_STANDARD 17)

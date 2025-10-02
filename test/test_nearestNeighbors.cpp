@@ -12,7 +12,7 @@ int main() {
     struct Data {
         Eigen::Vector<double, 6> point;
     };
-    fmp::NearestNeighbor<Data, 6> nn(1000000);
+    fmp::NearestNeighbor<Data, 6> nn(510000);
     fmp::RandomNumberGenerator rng;
 
     auto start = std::chrono::high_resolution_clock::now();
@@ -20,11 +20,7 @@ int main() {
 
     Data data;
     Data data1{Eigen::Vector<double, 6>{100, -100, 0, 0, 0, 0}};
-    Data data2{Eigen::Vector<double, 6>{100, 100, 5000, 100, 200, 300}};
-    Data data3{Eigen::Vector<double, 6>{100, 200, 400, 600, 1000.0, 600.0}};
     data_set.emplace_back(data1);
-    data_set.emplace_back(data2);
-    data_set.emplace_back(data3);
     nn.build(data_set);
     auto end = std::chrono::high_resolution_clock::now();
     auto point = Eigen::Vector<double, 6>{200.0, 400.0, 1000.0, 2000.0, 100.0, 200.0};
@@ -32,7 +28,7 @@ int main() {
               << "ms\n";
 
     start = std::chrono::high_resolution_clock::now();
-    for (size_t i{0}; i < 999000; ++i) {
+    for (size_t i{0}; i < 401000; ++i) {
         for (size_t j{0}; j < 6; ++j) {
             data.point(j) = rng.uniform(110, 20000);
         }

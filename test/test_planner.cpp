@@ -103,7 +103,7 @@ int main(int argc, const char* const* argv) {
     fmp::Sampler::UniquePtr sampler = std::make_unique<fmp::Sampler>(robot_params);
 
     // 规划器
-    fmp::RRTPlanner cp(collision_detector, uks, sampler, 1000000);
+    fmp::RRTPlanner cp(collision_detector, uks, sampler, 500000);
 
     // 控制器
     fmp::Controller controller(collision_detector);

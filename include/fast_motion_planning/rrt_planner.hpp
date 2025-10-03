@@ -30,7 +30,7 @@ public:
           fmp_(max_iter),
           nn_(max_iter) {
         step_ = 0.2;
-        stop_threshold_ = 0.27;
+        stop_threshold_ = 0.28;
     }
 
     ~RRTPlanner() {}
@@ -61,6 +61,8 @@ private:
 
     // 目标附近进行采样
     State goalSample(State goal_state);
+
+    State startSample(State goal_state);
 
     bool checkMotion(State st, State dt);
 

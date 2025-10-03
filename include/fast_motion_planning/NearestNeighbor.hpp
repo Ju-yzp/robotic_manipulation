@@ -88,7 +88,7 @@ private:
     static constexpr const int Min_Unbalanced_Tree_Size_ = 30;
 
     // 不平衡树在后台线程进行重建的最少节点数量要求
-    static constexpr const int Mutil_Rebuild_Point_Num_ = 2000;
+    static constexpr const int Mutil_Rebuild_Point_Num_ = 1700;
 
     // 操作队列标志
     std::atomic_flag operation_flag_ = ATOMIC_FLAG_INIT;
@@ -170,6 +170,7 @@ private:
 
     void searchByTree(
         KdTreeNode* root, PointType point, DataType& nearest_node, double nearest_dist) {
+        std::cout << "Search By Tree" << std::endl;
         std::stack<KdTreeNode*> ns;
         ns.emplace(root);
 
@@ -202,10 +203,8 @@ private:
             if (allow_rebuild && criterionCheck(node) &&
                 node->tree_size > Min_Unbalanced_Tree_Size_)
                 need_rebuild_tree = node;
-
             node = node->parent;
         }
-
         if (need_rebuild_tree) rebuild(need_rebuild_tree);
     }
 
@@ -310,10 +309,10 @@ private:
     }
 
     void mutilThread() {
+        std::cout << "Start rebuilding tree " << std::endl;
         while (!termination_flag_.load(std::memory_order_acquire)) {
             std::unique_lock<std::mutex> rebuild_lock(rebuild_mutex_);
             if (rebuild_tree_) {
-                std::cout << "Start rebuilding tree " << std::endl;
                 KdTreeNode* parent = rebuild_tree_->parent;
                 rebuild_pcl_storage_.clear();
                 KdTreeNode* new_root_node{nullptr};
@@ -323,9 +322,10 @@ private:
                 while (operation_flag_.test_and_set(std::memory_order_acquire))
                     ;
                 DataVector temp_data;
-                temp_data.swap(pending_data_);
+                pending_data_.swap(temp_data);
                 pending_data_.reserve(temp_data.size() * 2.0);
                 operation_flag_.clear(std::memory_order_release);
+
                 for (const auto& point : temp_data) {
                     add_by_point(point, new_root_node);
                 };
@@ -343,10 +343,10 @@ private:
                 freeTree(rebuild_tree_);
                 rebuild_tree_ = nullptr;
                 rebuild_lock.unlock();
-                std::cout << "Finish rebuilding tree " << std::endl;
             }
             std::this_thread::sleep_for(std::chrono::nanoseconds(500));
         }
+        std::cout << "Finish rebuilding tree " << std::endl;
     }
 
     void start_thread() { rebuild_thread_ = std::thread(&NearestNeighbor::mutilThread, this); }
@@ -404,6 +404,7 @@ private:
                 while (operation_flag_.test_and_set(std::memory_order_acquire))
                     ;
                 pending_data_.emplace_back(point);
+                bool flag_ = int(pending_data_.size()) > 20000;
                 operation_flag_.clear(std::memory_order_release);
                 return;
             } else {
@@ -451,24 +452,30 @@ public:
     void search(PointType point, DataType& nearest_node) {
         std::stack<KdTreeNode*> ns;
         if (!root_) return;
+
         nearest_node = root_->data;
         double nearest_dist = calc_dist(nearest_node.point, point);
         if (root_->right_child) ns.emplace(root_->right_child);
         if (root_->left_child) ns.emplace(root_->left_child);
 
-        KdTreeNode* rebuilding_tree{nullptr};
+        KdTreeNode** rebuilding_tree{nullptr};
         KdTreeNode* node{nullptr};
+        KdTreeNode* rebuild_root{nullptr};
         while (!ns.empty()) {
             node = ns.top();
             ns.pop();
 
             // 如果需要遍历正在重建的树,那么就优先遍历其他树先
             if (rebuild_tree_ && rebuild_tree_ == node) {
-                rebuilding_tree = node;
+                KdTreeNode* parent = node->parent;
+                if (parent->left_child == node)
+                    rebuilding_tree = &(parent->left_child);
+                else
+                    rebuilding_tree = &(parent->right_child);
                 continue;
             }
 
-            double cur_dist = calc_dist(node->data.point, nearest_node.point);
+            double cur_dist = calc_dist(node->data.point, point);
             if (cur_dist < nearest_dist) {
                 nearest_node = node->data;
                 nearest_dist = cur_dist;
@@ -480,9 +487,10 @@ public:
             if (node->left_child) ns.emplace(node->left_child);
         }
 
-        if (rebuilding_tree) {
-            while (search_flag_.test_and_set(std::memory_order_acquire)) std::this_thread::yield();
-            searchByTree(rebuilding_tree, point, nearest_node, nearest_dist);
+        if (rebuilding_tree && *rebuilding_tree) {
+            while (search_flag_.test_and_set(std::memory_order_acquire))
+                ;
+            searchByTree(*rebuilding_tree, point, nearest_node, nearest_dist);
             search_flag_.clear(std::memory_order_release);
         }
     }
@@ -490,6 +498,8 @@ public:
     void build(DataVector& points) { buildTree(&root_, points); }
 
     void add_point(DataType point) { add_by_point(point, root_, true); }
+
+    void size() { std::cout << int(root_->tree_size) << std::endl; }
 };
 }  // namespace fast_motion_planning
 

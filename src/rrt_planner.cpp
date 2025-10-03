@@ -49,7 +49,7 @@ void RRTPlanner::plan(PlanningProblem& ppm) {
         if (rng_.uniform01() < goalBasic_)
             ramdom_state = goalSample(valid_solutions[0]);
         else if (rng_.uniform01() < startBaisc_)
-            ramdom_state = goalSample(st);
+            ramdom_state = startSample(st);
         else
             ramdom_state = sampler_->sample();
 
@@ -69,7 +69,9 @@ void RRTPlanner::plan(PlanningProblem& ppm) {
             continue;
 
         double dist = distance(node->state, goal_node->state);
-        if (dist < distance(nearestGoalNode->state, goal_node->state)) nearestGoalNode = node;
+        double nearest_dist = dist < distance(nearestGoalNode->state, goal_node->state);
+        // std::cout<<nearest_dist<<std::endl;
+        if (dist < nearest_dist) nearestGoalNode = node;
         if (dist < stop_threshold_) {
             ppm.set_problem_state(true);
             goal_node->parent = node;
@@ -77,6 +79,8 @@ void RRTPlanner::plan(PlanningProblem& ppm) {
         }
     }
 
+    std::cout << "Total " << count << std::endl;
+    nn_.size();
     if (!ppm.get_probelm_state()) return;
 
     std::vector<State> initial_path, reverse_path;
@@ -126,7 +130,16 @@ State RRTPlanner::expand(const State& st, const State& dt) {
 State RRTPlanner::goalSample(State goal_state) {
     Eigen::Vector<double, 6> positions;
     for (size_t id{0}; id < 6; id++) {
-        positions[id] = rng_.uniform(goal_state[id] + 0.8, goal_state[id] - 0.8);
+        positions[id] = rng_.uniform(goal_state[id] + step_, goal_state[id] - step_);
+    }
+    State state{positions};
+    return state;
+}
+
+State RRTPlanner::startSample(State goal_state) {
+    Eigen::Vector<double, 6> positions;
+    for (size_t id{0}; id < 6; id++) {
+        positions[id] = rng_.uniform(goal_state[id] + 1.6, goal_state[id] - 1.6);
     }
     State state{positions};
     return state;

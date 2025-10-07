@@ -85,10 +85,10 @@ private:
     using CmpFunc = std::function<bool(DataType, DataType)>;
 
     // 不平衡树重建的最低节点数量要求
-    static constexpr const int Min_Unbalanced_Tree_Size_ = 30;
+    static constexpr const int Min_Unbalanced_Tree_Size_ = 100;
 
     // 不平衡树在后台线程进行重建的最少节点数量要求
-    static constexpr const int Mutil_Rebuild_Point_Num_ = 1700;
+    static constexpr const int Mutil_Rebuild_Point_Num_ = 2000;
 
     // 操作队列标志
     std::atomic_flag operation_flag_ = ATOMIC_FLAG_INIT;
@@ -191,7 +191,7 @@ private:
         }
     }
 
-    void update(KdTreeNode* node, bool allow_rebuild, int increase_size) {
+    void update(KdTreeNode* node, bool allow_rebuild, uint32_t increase_size) {
         PointType point = node->data.point;
 
         node = node->parent;
@@ -200,9 +200,7 @@ private:
             node->tree_size += increase_size;
             double dist = calc_dist(node->data.point, point);
             if (dist > node->radius) node->radius = dist;
-            if (allow_rebuild && criterionCheck(node) &&
-                node->tree_size > Min_Unbalanced_Tree_Size_)
-                need_rebuild_tree = node;
+            if (allow_rebuild && criterionCheck(node)) need_rebuild_tree = node;
             node = node->parent;
         }
         if (need_rebuild_tree) rebuild(need_rebuild_tree);
@@ -311,24 +309,27 @@ private:
     void mutilThread() {
         std::cout << "Start rebuilding tree " << std::endl;
         while (!termination_flag_.load(std::memory_order_acquire)) {
-            std::unique_lock<std::mutex> rebuild_lock(rebuild_mutex_);
             if (rebuild_tree_) {
+                std::unique_lock<std::mutex> rebuild_lock(rebuild_mutex_);
                 KdTreeNode* parent = rebuild_tree_->parent;
                 rebuild_pcl_storage_.clear();
                 KdTreeNode* new_root_node{nullptr};
                 flatten(rebuild_tree_, rebuild_pcl_storage_);
+                std::cout << "rebuild tree node size " << int(rebuild_pcl_storage_.size())
+                          << std::endl;
                 buildTree(&new_root_node, rebuild_pcl_storage_);
 
                 while (operation_flag_.test_and_set(std::memory_order_acquire))
                     ;
                 DataVector temp_data;
                 pending_data_.swap(temp_data);
+                pending_data_.clear();
                 pending_data_.reserve(temp_data.size() * 2.0);
-                operation_flag_.clear(std::memory_order_release);
+                std::cout << int(temp_data.size()) << std::endl;
+                operation_flag_.clear(std::memory_order_acquire);
 
-                for (const auto& point : temp_data) {
+                for (const auto& point : temp_data)  //{
                     add_by_point(point, new_root_node);
-                };
                 while (search_flag_.test_and_set(std::memory_order_acquire))
                     ;
                 if (parent) {
@@ -390,9 +391,11 @@ private:
         if (!child_ptr) return false;
 
         balance_evaluation = double(child_ptr->tree_size) / double(node->tree_size);
+
         if (balance_evaluation > balance_criterion_param_ ||
-            (1.0 - balance_evaluation) < balance_criterion_param_)
+            (1.0 - balance_evaluation) > balance_criterion_param_)
             return true;
+
         return false;
     }
 
@@ -404,8 +407,7 @@ private:
                 while (operation_flag_.test_and_set(std::memory_order_acquire))
                     ;
                 pending_data_.emplace_back(point);
-                bool flag_ = int(pending_data_.size()) > 20000;
-                operation_flag_.clear(std::memory_order_release);
+                operation_flag_.clear(std::memory_order_acquire);
                 return;
             } else {
                 if (cmp_func_map_[child->div_axis](child->data, point)) {
@@ -444,7 +446,7 @@ public:
     ~NearestNeighbor() {
         termination_flag_.store(true, std::memory_order_release);
         if (rebuild_thread_.joinable()) rebuild_thread_.join();
-        std::cout << "root size" << (int)root_->tree_size << std::endl;
+
         if (root_) freeTree(root_);
     }
 
@@ -491,7 +493,7 @@ public:
             while (search_flag_.test_and_set(std::memory_order_acquire))
                 ;
             searchByTree(*rebuilding_tree, point, nearest_node, nearest_dist);
-            search_flag_.clear(std::memory_order_release);
+            search_flag_.clear(std::memory_order_acquire);
         }
     }
 

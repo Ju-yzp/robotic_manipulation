@@ -35,6 +35,9 @@ public:
     virtual std::unordered_map<std::size_t, Eigen::Matrix4d> forwardKinematic(
         const State state) = 0;
 
+    // 雅各比矩阵
+    // virtual Eigen::MatrixXd get_jacobian_matrix() = 0;
+
 protected:
     // 机械臂轴数
     int dof_{0};

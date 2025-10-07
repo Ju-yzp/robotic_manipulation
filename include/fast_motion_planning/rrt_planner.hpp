@@ -2,7 +2,6 @@
 #define FAST_MOTION_PLANNING_RRT_PLANNER_HPP_
 
 // fast_motion_planning
-#include <cstdint>
 #include <fast_motion_planning/NearestNeighbor.hpp>
 #include <fast_motion_planning/collision_detector.hpp>
 #include <fast_motion_planning/kinematic_interface.hpp>
@@ -11,6 +10,7 @@
 #include <fast_motion_planning/types.hpp>
 
 // cpp
+#include <cstdint>
 #include <optional>
 #include <vector>
 

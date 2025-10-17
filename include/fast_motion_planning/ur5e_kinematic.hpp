@@ -35,6 +35,9 @@ public:
 
     std::unordered_map<std::size_t, Eigen::Matrix4d> forwardKinematic(const State state) override;
 
+    Eigen::VectorXd get_joint(
+        Eigen::Vector3d pos_diff, Eigen::VectorXd current_joint_status) override;
+
     Eigen::Matrix4d get_endeffector_pose(const State& state);
 
 private:

@@ -1,6 +1,7 @@
 #ifndef FAST_MOTION_PLANNING_COLLISION_DETECTOR_HPP_
 #define FAST_MOTION_PLANNING_COLLISION_DETECTOR_HPP_
 
+#include <cassert>
 #include <fast_motion_planning/RobotParams.hpp>
 #include <fast_motion_planning/types.hpp>
 
@@ -27,6 +28,11 @@ public:
 
     RobotParams::SharedPtr get_robot_params() { return robot_params_; }
 
+    void set_oder(Eigen::VectorXi oder) {
+        assert(oder.size() == dof_);
+        oder_ = oder;
+    }
+
 private:
     RobotParams::SharedPtr robot_params_;
 
@@ -37,6 +43,9 @@ private:
     Eigen::VectorXd obstacles_radius_;
 
     int dof_;
+
+    // 碰撞顺序
+    Eigen::VectorXi oder_;
 };
 }  // namespace fast_motion_planning
 

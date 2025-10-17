@@ -36,7 +36,8 @@ public:
         const State state) = 0;
 
     // 雅各比矩阵
-    // virtual Eigen::MatrixXd get_jacobian_matrix() = 0;
+    virtual Eigen::VectorXd get_joint(
+        Eigen::Vector3d pos_diff, Eigen::VectorXd current_joint_status) = 0;
 
 protected:
     // 机械臂轴数

@@ -32,6 +32,51 @@ Eigen::Matrix4d frameTransform(float a, float d, float alpha, float theta) {
     return transform_matrix;
 }
 
+Eigen::Matrix4d derivative(float a, float d, float alpha, float theta) {
+    Eigen::Matrix4d derivative_matrix = Eigen::Matrix4d::Zero();
+    float st = sin(theta);
+    float ct = cos(theta);
+    float sa = sin(alpha);
+    float ca = cos(alpha);
+    derivative_matrix << -st, -ct, 0, 0, ct * ca, -st * ca, 0, 0, ct * sa, -st * sa, 0, 0, 0, 0, 0,
+        0;
+    return derivative_matrix;
+};
+
+Eigen::VectorXd Ur5eKinematicSolver::get_joint(
+    Eigen::Vector3d pos_diff, Eigen::VectorXd current_joint_status) {
+    std::vector<Eigen::Matrix4d> tf_vector, derivative_vector;
+    tf_vector.resize(dof_);
+    derivative_vector.resize(dof_);
+
+    for (int i{0}; i < dof_; ++i) {
+        tf_vector[i] =
+            frameTransform(a_table_[i], d_table_[i], alpha_table_[i], current_joint_status[i]);
+        derivative_vector[i] =
+            derivative(a_table_[i], d_table_[i], alpha_table_[i], current_joint_status[i]);
+    }
+
+    Eigen::MatrixXd jacobian_matrix = Eigen::MatrixXd::Zero(3, dof_);
+
+    Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+    Eigen::VectorXd joint_diff = Eigen::VectorXd::Zero(dof_);
+    for (int i{0}; i < dof_; ++i) {
+        Eigen::Matrix4d tf = Eigen::Matrix4d::Identity();
+        for (int j{0}; j < dof_; ++j) {
+            if (i == j)
+                tf *= derivative_vector[j];
+            else
+                tf *= tf_vector[j];
+        }
+
+        jacobian_matrix.col(i) = (tf * Eigen::Vector4d(0.0, 0.0, 0.0, 1.0)).block(0, 0, 3, 1);
+    }
+
+    Eigen::Vector<double, 6> diff{0.07, 0.12, 0.0, 0.08, 0.1, 0.1};
+    std::cout << (jacobian_matrix * diff).format(CleanFmt) << std::endl;
+    return joint_diff;
+}
+
 std::unordered_map<std::size_t, Eigen::Matrix4d> Ur5eKinematicSolver::forwardKinematic(
     const State state) {
     std::unordered_map<std::size_t, Eigen::Matrix4d> tf_map;

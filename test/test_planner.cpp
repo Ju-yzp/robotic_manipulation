@@ -11,6 +11,7 @@
 #include <fast_motion_planning/ur5e_kinematic.hpp>
 
 // ros2
+#include <iostream>
 #include <rclcpp/rclcpp.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <visualization_tools/trajectory_visualization.hpp>
@@ -98,7 +99,7 @@ int main(int argc, const char* const* argv) {
     // 碰撞检测器
     fmp::CollisionDetector::SharedPtr collision_detector =
         std::make_shared<fmp::CollisionDetector>(robot_params);
-
+    collision_detector->set_oder(Eigen::Vector<int, 6>{2, 1, 5, 0, 3, 4});
     // 采样器
     fmp::Sampler::UniquePtr sampler = std::make_unique<fmp::Sampler>(robot_params);
 
@@ -109,12 +110,12 @@ int main(int argc, const char* const* argv) {
     fmp::Controller controller(collision_detector);
 
     // 定义障碍物
-    Eigen::Matrix<double, 4, 5> ospn;
-    ospn << -200.0, 100.0, 300.0, 400.0, 400.0, 500.0, -200.0, 400.0, 0.0, -300.0, 600.0, 650.0,
-        400.0, 300.0, 200.0, 1.0, 1.0, 1.0, 1.0, 1.0;
+    Eigen::Matrix<double, 4, 6> ospn;
+    ospn << -200.0, 100.0, 300.0, 400.0, 400.0, 400.0, 500.0, -200.0, 400.0, 0.0, -300.0, 0.0,
+        600.0, 650.0, 400.0, 300.0, 200.0, 500.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0;
 
-    Eigen::Vector<double, 5> osrs;
-    osrs << 120.0, 120.0, 100.0, 100.0, 100.0;
+    Eigen::Vector<double, 6> osrs;
+    osrs << 120.0, 120.0, 100.0, 100.0, 100.0, 150.0;
     collision_detector->set_obstacles(ospn, osrs);
 
     rclcpp::init(argc, argv);
@@ -124,42 +125,49 @@ int main(int argc, const char* const* argv) {
 
     // 进行规划
     auto start = std::chrono::high_resolution_clock::now();
-    cp.plan(ppm);
-    auto end = std::chrono::high_resolution_clock::now();
-    std::cout << "规划耗时:" << std::chrono::duration<double, std::milli>(end - start).count()
-              << "ms\n";
-    if (ppm.get_probelm_state())
-        std::cout << "Succeful to solve the planning problem." << std::endl;
-    else {
-        std::cout << "Failed to solve the planning problem." << std::endl;
-        return -1;
-    }
 
-    // 平滑路径
-    fmp::NonUniformBspline nub = controller.smoothPath(ppm);
+    Eigen::Vector<double, 6> current_state = start_state;
+    uks->get_joint(Eigen::Vector3d::Zero(), current_state);
+    Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+    std::cout << uks->get_endeffector_pose(start_state).format(CleanFmt) << std::endl;
+    Eigen::Vector<double, 6> diff{0.07, 0.12, 0.0, 0.08, 0.1, 0.1};
+    std::cout << uks->get_endeffector_pose(start_state + diff).format(CleanFmt) << std::endl;
+    // cp.plan(ppm);
+    // auto end = std::chrono::high_resolution_clock::now();
+    // std::cout << "规划耗时:" << std::chrono::duration<double, std::milli>(end - start).count()
+    //           << "ms\n";
+    // if (ppm.get_probelm_state())
+    //     std::cout << "Succeful to solve the planning problem." << std::endl;
+    // else {
+    //     std::cout << "Failed to solve the planning problem." << std::endl;
+    //     return -1;
+    // }
 
-    // 轨迹可行性检查
-    if (controller.checkAllTrajectory(nub)) {
-        std::cout << "Optimized trajectory is safe" << std::endl;
-    } else {
-        std::cout << "Optimized tarjectory is unsafe " << std::endl;
-        return -1;
-    }
-    int num = 10;
-    double step = nub.getTimeSum() / double(num);
-    for (int i{0}; i < num + 1; ++i) {
-        auto state = nub.evaluateDeBoorT(double(i) * step);
-        std::unordered_map<std::string, double> jsp;
-        jsp["base_link-base_link_inertia"] = 0.0;
-        jsp["shoulder_pan_joint"] = state[0];
-        jsp["shoulder_lift_joint"] = state[1];
-        jsp["elbow_joint"] = state[2];
-        jsp["wrist_1_joint"] = state[3];
-        jsp["wrist_2_joint"] = -state[4];
-        jsp["wrist_3_joint"] = state[5];
-        tp.publish_trajectory(jsp);
-    }
-    tp.publish_obstacles(ospn, osrs);
+    // // 平滑路径
+    // fmp::NonUniformBspline nub = controller.smoothPath(ppm);
+
+    // // 轨迹可行性检查
+    // if (controller.checkAllTrajectory(nub)) {
+    //     std::cout << "Optimized trajectory is safe" << std::endl;
+    // } else {
+    //     std::cout << "Optimized tarjectory is unsafe " << std::endl;
+    //     return -1;
+    // }
+    // int num = 10;
+    // double step = nub.getTimeSum() / double(num);
+    // for (int i{0}; i < num + 1; ++i) {
+    //     auto state = nub.evaluateDeBoorT(double(i) * step);
+    //     std::unordered_map<std::string, double> jsp;
+    //     jsp["base_link-base_link_inertia"] = 0.0;
+    //     jsp["shoulder_pan_joint"] = state[0];
+    //     jsp["shoulder_lift_joint"] = state[1];
+    //     jsp["elbow_joint"] = state[2];
+    //     jsp["wrist_1_joint"] = state[3];
+    //     jsp["wrist_2_joint"] = -state[4];
+    //     jsp["wrist_3_joint"] = state[5];
+    //     tp.publish_trajectory(jsp);
+    // }
+    // tp.publish_obstacles(ospn, osrs);
     while (rclcpp::ok()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }

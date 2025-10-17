@@ -56,7 +56,7 @@ void RRTPlanner::plan(PlanningProblem& ppm) {
         // 寻找最邻近点,并且向随机采样点的方向扩展
         nn_.search(ramdom_state, nearest_node);
         state = expand(nearest_node.point, ramdom_state);
-        count++;
+
         StateNode* node{nullptr};
         if (checkMotion(nearest_node.point, state)) {
             node = fmp_.allocate();
@@ -64,13 +64,13 @@ void RRTPlanner::plan(PlanningProblem& ppm) {
             node->state = state;
             is.ptr = node;
             is.point = state;
+            count++;
             nn_.add_point(is);
         } else
             continue;
 
         double dist = distance(node->state, goal_node->state);
         double nearest_dist = dist < distance(nearestGoalNode->state, goal_node->state);
-        // std::cout<<nearest_dist<<std::endl;
         if (dist < nearest_dist) nearestGoalNode = node;
         if (dist < stop_threshold_) {
             ppm.set_problem_state(true);
@@ -79,8 +79,6 @@ void RRTPlanner::plan(PlanningProblem& ppm) {
         }
     }
 
-    std::cout << "Total " << count << std::endl;
-    nn_.size();
     if (!ppm.get_probelm_state()) return;
 
     std::vector<State> initial_path, reverse_path;
